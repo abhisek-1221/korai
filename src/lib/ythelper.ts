@@ -36,3 +36,36 @@ export const parseDuration = (duration: string): number => {
       day: 'numeric',
     })
   }
+
+  // Helper functions for YouTube URL parsing
+export function extractVideoId(url: string): string | null {
+    const match = url.match(
+      /(?:v=|\/?\/(?:embed|shorts|v)\/|youtu\.be\/|\/v\/|\/e\/|watch\?v=|\/watch\?.+&v=)([^&?/\n\s]+)/
+    )
+    return match ? match[1] : null
+  }
+  
+  export function extractChannelId(url: string): string | null {
+    // Handle channel URLs in format: https://www.youtube.com/channel/UC...
+    const channelRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/channel\/([^\/\n\s]+)/
+    const channelMatch = url.match(channelRegex)
+    if (channelMatch) return channelMatch[1]
+  
+    // Handle custom URLs in format: https://www.youtube.com/c/ChannelName
+    const customUrlRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:c|user)\/([^\/\n\s]+)/
+    const customMatch = url.match(customUrlRegex)
+    if (customMatch) {
+      // For custom URLs, we need to make an additional API call to get the channel ID
+      return null // Will handle this in the main function
+    }
+  
+    // Handle @username format
+    const usernameRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/@([^\/\n\s]+)/
+    const usernameMatch = url.match(usernameRegex)
+    if (usernameMatch) {
+      // For usernames, we need to make an additional API call to get the channel ID
+      return null // Will handle this in the main function
+    }
+  
+    return null
+  }
