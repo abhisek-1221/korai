@@ -1,306 +1,331 @@
-import { ChannelData, RecentVideo, VideoData, ViewData } from "./youtube"
+import { ChannelData, RecentVideo, VideoData, ViewData } from './youtube';
 
-export const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3'
-export const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
-
+export const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
+export const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 export const parseDuration = (duration: string): number => {
-    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/)
-    const hours = parseInt(match?.[1] ?? '0') || 0
-    const minutes = parseInt(match?.[2] ?? '0') || 0
-    const seconds = parseInt(match?.[3] ?? '0') || 0
-    return hours * 3600 + minutes * 60 + seconds
-  }
-  
-  export const formatDuration = (seconds: number): string => {
-    const days = Math.floor(seconds / 86400)
-    const hours = Math.floor((seconds % 86400) / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const remainingSeconds = seconds % 60
-  
-    const parts = []
-    if (days > 0) parts.push(`${days}d`)
-    if (hours > 0) parts.push(`${hours}h`)
-    if (minutes > 0) parts.push(`${minutes}m`)
-    if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`)
-  
-    return parts.join(' ')
-  }
-  
-  export const formatNumber = (num: number): string => {
-    return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(num)
-  }
-  
-  export const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-  }
+  const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+  const hours = parseInt(match?.[1] ?? '0') || 0;
+  const minutes = parseInt(match?.[2] ?? '0') || 0;
+  const seconds = parseInt(match?.[3] ?? '0') || 0;
+  return hours * 3600 + minutes * 60 + seconds;
+};
 
-  // Helper functions for YouTube URL parsing
+export const formatDuration = (seconds: number): string => {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+
+  return parts.join(' ');
+};
+
+export const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(num);
+};
+
+export const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+export const formatTimestamp = (ms: number): string => {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
+// Helper functions for YouTube URL parsing
 export function extractVideoId(url: string): string | null {
-    const match = url.match(
-      /(?:v=|\/?\/(?:embed|shorts|v)\/|youtu\.be\/|\/v\/|\/e\/|watch\?v=|\/watch\?.+&v=)([^&?/\n\s]+)/
-    )
-    return match ? match[1] : null
-  }
-  
-  export function extractChannelId(url: string): string | null {
-    // Handle channel URLs in format: https://www.youtube.com/channel/UC...
-    const channelRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/channel\/([^\/\n\s]+)/
-    const channelMatch = url.match(channelRegex)
-    if (channelMatch) return channelMatch[1]
-  
-    // Handle custom URLs in format: https://www.youtube.com/c/ChannelName
-    const customUrlRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:c|user)\/([^\/\n\s]+)/
-    const customMatch = url.match(customUrlRegex)
-    if (customMatch) {
-      // For custom URLs, we need to make an additional API call to get the channel ID
-      return null // Will handle this in the main function
-    }
-  
-    // Handle @username format
-    const usernameRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/@([^\/\n\s]+)/
-    const usernameMatch = url.match(usernameRegex)
-    if (usernameMatch) {
-      // For usernames, we need to make an additional API call to get the channel ID
-      return null // Will handle this in the main function
-    }
-  
-    return null
+  const match = url.match(
+    /(?:v=|\/?\/(?:embed|shorts|v)\/|youtu\.be\/|\/v\/|\/e\/|watch\?v=|\/watch\?.+&v=)([^&?/\n\s]+)/
+  );
+  return match ? match[1] : null;
+}
+
+export function extractChannelId(url: string): string | null {
+  // Handle channel URLs in format: https://www.youtube.com/channel/UC...
+  const channelRegex =
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/channel\/([^\/\n\s]+)/;
+  const channelMatch = url.match(channelRegex);
+  if (channelMatch) return channelMatch[1];
+
+  // Handle custom URLs in format: https://www.youtube.com/c/ChannelName
+  const customUrlRegex =
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:c|user)\/([^\/\n\s]+)/;
+  const customMatch = url.match(customUrlRegex);
+  if (customMatch) {
+    // For custom URLs, we need to make an additional API call to get the channel ID
+    return null; // Will handle this in the main function
   }
 
-  export async function getChannelIdFromUsername(username: string): Promise<string | null> {
-    try {
-      const response = await fetch(
-        `${YOUTUBE_API_BASE_URL}/search?part=snippet&q=${username}&type=channel&key=${YOUTUBE_API_KEY}`
-      )
-  
-      if (!response.ok) {
-        throw new Error('Failed to fetch channel ID')
-      }
-  
-      const data = await response.json()
-      if (data.items && data.items.length > 0) {
-        return data.items[0].snippet.channelId
-      }
-  
-      return null
-    } catch (error) {
-      console.error('Error getting channel ID from username:', error)
-      return null
-    }
+  // Handle @username format
+  const usernameRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/@([^\/\n\s]+)/;
+  const usernameMatch = url.match(usernameRegex);
+  if (usernameMatch) {
+    // For usernames, we need to make an additional API call to get the channel ID
+    return null; // Will handle this in the main function
   }
 
-  export async function fetchChannelData(channelId: string): Promise<ChannelData> {
+  return null;
+}
+
+export async function getChannelIdFromUsername(
+  username: string
+): Promise<string | null> {
+  try {
     const response = await fetch(
-      `${YOUTUBE_API_BASE_URL}/channels?part=snippet,statistics,contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
-    )
-  
+      `${YOUTUBE_API_BASE_URL}/search?part=snippet&q=${username}&type=channel&key=${YOUTUBE_API_KEY}`
+    );
+
     if (!response.ok) {
-      throw new Error('Failed to fetch channel data')
+      throw new Error('Failed to fetch channel ID');
     }
-  
-    const data = await response.json()
-  
-    if (!data.items || data.items.length === 0) {
-      throw new Error('Channel not found')
+
+    const data = await response.json();
+    if (data.items && data.items.length > 0) {
+      return data.items[0].snippet.channelId;
     }
-  
-    const channel = data.items[0]
-  
-    return {
-      name: channel.snippet.title,
-      username: `@${channel.snippet.customUrl || channel.snippet.title.toLowerCase().replace(/\s+/g, '')}`,
-      videosCount: parseInt(channel.statistics.videoCount || '0'),
-      subscribers: parseInt(channel.statistics.subscriberCount || '0'),
-      totalViews: parseInt(channel.statistics.viewCount || '0'),
-      thumbnails: channel.snippet.thumbnails,
-      country: channel.snippet.country,
-    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting channel ID from username:', error);
+    return null;
+  }
+}
+
+export async function fetchChannelData(
+  channelId: string
+): Promise<ChannelData> {
+  const response = await fetch(
+    `${YOUTUBE_API_BASE_URL}/channels?part=snippet,statistics,contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch channel data');
   }
 
-  export async function fetchRecentVideos(channelId: string, maxResults = 5): Promise<RecentVideo[]> {
-    // First get the uploads playlist ID
-    const channelResponse = await fetch(
-      `${YOUTUBE_API_BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
-    )
-  
-    if (!channelResponse.ok) {
-      throw new Error('Failed to fetch channel uploads playlist')
-    }
-  
-    const channelData = await channelResponse.json()
-  
-    if (!channelData.items || channelData.items.length === 0) {
-      throw new Error('Channel not found')
-    }
-  
-    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
-  
-    // Now get the recent videos from the uploads playlist
-    const videosResponse = await fetch(
-      `${YOUTUBE_API_BASE_URL}/playlistItems?part=snippet&maxResults=${maxResults}&playlistId=${uploadsPlaylistId}&key=${YOUTUBE_API_KEY}`
-    )
-  
-    if (!videosResponse.ok) {
-      throw new Error('Failed to fetch recent videos')
-    }
-  
-    const videosData = await videosResponse.json()
-  
-    if (!videosData.items || videosData.items.length === 0) {
-      return []
-    }
-  
-    // Get video IDs to fetch statistics and content details
-    const videoIds = videosData.items.map((item: any) => item.snippet.resourceId.videoId).join(',')
-  
-    const videoDetailsResponse = await fetch(
-      `${YOUTUBE_API_BASE_URL}/videos?part=statistics,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
-    )
-  
-    if (!videoDetailsResponse.ok) {
-      throw new Error('Failed to fetch video details')
-    }
-  
-    const videoDetailsData = await videoDetailsResponse.json()
-  
-    // Map video stats to video items
-    return videosData.items.map((item: any) => {
-      const videoId = item.snippet.resourceId.videoId
-      const details = videoDetailsData.items.find((detail: any) => detail.id === videoId)
-      const publishedDate = new Date(item.snippet.publishedAt)
-      const now = new Date()
-      const diffTime = Math.abs(now.getTime() - publishedDate.getTime())
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
-      let uploadTime = ''
-      if (diffDays < 1) {
-        const diffHours = Math.ceil(diffTime / (1000 * 60 * 60))
-        uploadTime = `First ${diffHours} hours`
-      } else {
-        uploadTime = `${diffDays} days ago`
-      }
-  
-      return {
-        title: item.snippet.title,
-        views: parseInt(details?.statistics.viewCount || '0'),
-        uploadTime,
-        thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url,
-        videoId: videoId,
-        duration: parseDuration(details?.contentDetails.duration || 'PT0S'),
-        likeCount: parseInt(details?.statistics.likeCount || '0'),
-      }
-    })
+  const data = await response.json();
+
+  if (!data.items || data.items.length === 0) {
+    throw new Error('Channel not found');
   }
 
-  // to be refactored with Channel Analytics API later
+  const channel = data.items[0];
 
-export async function fetchViewsData(channelId: string, days = 6): Promise<ViewData[]> {
-    const response = await fetch(
-      `${YOUTUBE_API_BASE_URL}/channels?part=statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`
-    )
-  
-    if (!response.ok) {
-      throw new Error('Failed to fetch channel statistics')
-    }
-  
-    const data = await response.json()
-  
-    if (!data.items || data.items.length === 0) {
-      throw new Error('Channel not found')
-    }
-  
-    const totalViews = parseInt(data.items[0].statistics.viewCount || '0')
-  
-    const avgDailyViews = Math.floor(totalViews / 365)
-  
-    const viewsData: ViewData[] = []
-    for (let i = 1; i <= days; i++) {
-      const randomFactor = 0.7 + Math.random() * 0.6
-      const dailyViews = Math.floor(avgDailyViews * randomFactor)
-  
-      viewsData.push({
-        name: i.toString(),
-        views: dailyViews,
-      })
-    }
-  
-    return viewsData
+  return {
+    name: channel.snippet.title,
+    username: `@${channel.snippet.customUrl || channel.snippet.title.toLowerCase().replace(/\s+/g, '')}`,
+    videosCount: parseInt(channel.statistics.videoCount || '0'),
+    subscribers: parseInt(channel.statistics.subscriberCount || '0'),
+    totalViews: parseInt(channel.statistics.viewCount || '0'),
+    thumbnails: channel.snippet.thumbnails,
+    country: channel.snippet.country
+  };
+}
+
+export async function fetchRecentVideos(
+  channelId: string,
+  maxResults = 5
+): Promise<RecentVideo[]> {
+  // First get the uploads playlist ID
+  const channelResponse = await fetch(
+    `${YOUTUBE_API_BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
+  );
+
+  if (!channelResponse.ok) {
+    throw new Error('Failed to fetch channel uploads playlist');
   }
 
-  // Format duration for display in hours:minutes:seconds format
-export function formatDurationForDisplay(seconds: number): string {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const remainingSeconds = seconds % 60
-  
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds
-        .toString()
-        .padStart(2, '0')}`
+  const channelData = await channelResponse.json();
+
+  if (!channelData.items || channelData.items.length === 0) {
+    throw new Error('Channel not found');
+  }
+
+  const uploadsPlaylistId =
+    channelData.items[0].contentDetails.relatedPlaylists.uploads;
+
+  // Now get the recent videos from the uploads playlist
+  const videosResponse = await fetch(
+    `${YOUTUBE_API_BASE_URL}/playlistItems?part=snippet&maxResults=${maxResults}&playlistId=${uploadsPlaylistId}&key=${YOUTUBE_API_KEY}`
+  );
+
+  if (!videosResponse.ok) {
+    throw new Error('Failed to fetch recent videos');
+  }
+
+  const videosData = await videosResponse.json();
+
+  if (!videosData.items || videosData.items.length === 0) {
+    return [];
+  }
+
+  // Get video IDs to fetch statistics and content details
+  const videoIds = videosData.items
+    .map((item: any) => item.snippet.resourceId.videoId)
+    .join(',');
+
+  const videoDetailsResponse = await fetch(
+    `${YOUTUBE_API_BASE_URL}/videos?part=statistics,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
+  );
+
+  if (!videoDetailsResponse.ok) {
+    throw new Error('Failed to fetch video details');
+  }
+
+  const videoDetailsData = await videoDetailsResponse.json();
+
+  // Map video stats to video items
+  return videosData.items.map((item: any) => {
+    const videoId = item.snippet.resourceId.videoId;
+    const details = videoDetailsData.items.find(
+      (detail: any) => detail.id === videoId
+    );
+    const publishedDate = new Date(item.snippet.publishedAt);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - publishedDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let uploadTime = '';
+    if (diffDays < 1) {
+      const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+      uploadTime = `First ${diffHours} hours`;
     } else {
-      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+      uploadTime = `${diffDays} days ago`;
     }
+
+    return {
+      title: item.snippet.title,
+      views: parseInt(details?.statistics.viewCount || '0'),
+      uploadTime,
+      thumbnail:
+        item.snippet.thumbnails.high?.url ||
+        item.snippet.thumbnails.default?.url,
+      videoId: videoId,
+      duration: parseDuration(details?.contentDetails.duration || 'PT0S'),
+      likeCount: parseInt(details?.statistics.likeCount || '0')
+    };
+  });
+}
+
+// to be refactored with Channel Analytics API later
+
+export async function fetchViewsData(
+  channelId: string,
+  days = 6
+): Promise<ViewData[]> {
+  const response = await fetch(
+    `${YOUTUBE_API_BASE_URL}/channels?part=statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch channel statistics');
   }
 
-  // Fetch video data from YouTube API
-export async function fetchVideoData(videoId: string): Promise<VideoData> {
-    // Fetch video details
-    const response = await fetch(
-      `${YOUTUBE_API_BASE_URL}/videos?part=snippet,statistics,contentDetails&id=${videoId}&key=${YOUTUBE_API_KEY}`
-    )
-  
-    if (!response.ok) {
-      throw new Error('Failed to fetch video details')
-    }
-  
-    const data = await response.json()
-  
-    if (!data.items || data.items.length === 0) {
-      throw new Error('Video not found')
-    }
-  
-    const video = data.items[0]
-    const channelId = video.snippet.channelId
-  
-    // Fetch channel details to get the channel name
-    const channelResponse = await fetch(
-      `${YOUTUBE_API_BASE_URL}/channels?part=snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`
-    )
-  
-    if (!channelResponse.ok) {
-      throw new Error('Failed to fetch channel details')
-    }
-  
-    const channelData = await channelResponse.json()
-    const channelName = channelData.items?.[0]?.snippet?.title || 'Unknown Channel'
-  
-    // Parse video data
-    const views = parseInt(video.statistics.viewCount || '0')
-    const likes = parseInt(video.statistics.likeCount || '0')
-    const comments = parseInt(video.statistics.commentCount || '0')
-    const duration = parseDuration(video.contentDetails.duration)
-  
-    return {
-      id: video.id,
-      title: video.snippet.title,
-      channel: channelName,
-      channelId: channelId,
-      views: views,
-      viewsFormatted: `${formatNumber(views)} views`,
-      published: formatDate(video.snippet.publishedAt),
-      description: video.snippet.description,
-      likes: likes,
-      likesFormatted: formatNumber(likes),
-      comments: comments,
-      commentsFormatted: formatNumber(comments),
-      duration: duration,
-      durationFormatted: formatDurationForDisplay(duration),
-      thumbnails: video.snippet.thumbnails,
-    }
+  const data = await response.json();
+
+  if (!data.items || data.items.length === 0) {
+    throw new Error('Channel not found');
   }
-  
+
+  const totalViews = parseInt(data.items[0].statistics.viewCount || '0');
+
+  const avgDailyViews = Math.floor(totalViews / 365);
+
+  const viewsData: ViewData[] = [];
+  for (let i = 1; i <= days; i++) {
+    const randomFactor = 0.7 + Math.random() * 0.6;
+    const dailyViews = Math.floor(avgDailyViews * randomFactor);
+
+    viewsData.push({
+      name: i.toString(),
+      views: dailyViews
+    });
+  }
+
+  return viewsData;
+}
+
+// Format duration for display in hours:minutes:seconds format
+export function formatDurationForDisplay(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds
+      .toString()
+      .padStart(2, '0')}`;
+  } else {
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+}
+
+// Fetch video data from YouTube API
+export async function fetchVideoData(videoId: string): Promise<VideoData> {
+  // Fetch video details
+  const response = await fetch(
+    `${YOUTUBE_API_BASE_URL}/videos?part=snippet,statistics,contentDetails&id=${videoId}&key=${YOUTUBE_API_KEY}`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch video details');
+  }
+
+  const data = await response.json();
+
+  if (!data.items || data.items.length === 0) {
+    throw new Error('Video not found');
+  }
+
+  const video = data.items[0];
+  const channelId = video.snippet.channelId;
+
+  // Fetch channel details to get the channel name
+  const channelResponse = await fetch(
+    `${YOUTUBE_API_BASE_URL}/channels?part=snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`
+  );
+
+  if (!channelResponse.ok) {
+    throw new Error('Failed to fetch channel details');
+  }
+
+  const channelData = await channelResponse.json();
+  const channelName =
+    channelData.items?.[0]?.snippet?.title || 'Unknown Channel';
+
+  // Parse video data
+  const views = parseInt(video.statistics.viewCount || '0');
+  const likes = parseInt(video.statistics.likeCount || '0');
+  const comments = parseInt(video.statistics.commentCount || '0');
+  const duration = parseDuration(video.contentDetails.duration);
+
+  return {
+    id: video.id,
+    title: video.snippet.title,
+    channel: channelName,
+    channelId: channelId,
+    views: views,
+    viewsFormatted: `${formatNumber(views)} views`,
+    published: formatDate(video.snippet.publishedAt),
+    description: video.snippet.description,
+    likes: likes,
+    likesFormatted: formatNumber(likes),
+    comments: comments,
+    commentsFormatted: formatNumber(comments),
+    duration: duration,
+    durationFormatted: formatDurationForDisplay(duration),
+    thumbnails: video.snippet.thumbnails
+  };
+}
