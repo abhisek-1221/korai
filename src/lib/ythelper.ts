@@ -1,4 +1,4 @@
-import { ChannelData } from "./youtube"
+import { ChannelData, RecentVideo } from "./youtube"
 
 export const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3'
 export const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
@@ -120,4 +120,79 @@ export function extractVideoId(url: string): string | null {
       thumbnails: channel.snippet.thumbnails,
       country: channel.snippet.country,
     }
+  }
+
+  export async function fetchRecentVideos(channelId: string, maxResults = 5): Promise<RecentVideo[]> {
+    // First get the uploads playlist ID
+    const channelResponse = await fetch(
+      `${YOUTUBE_API_BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
+    )
+  
+    if (!channelResponse.ok) {
+      throw new Error('Failed to fetch channel uploads playlist')
+    }
+  
+    const channelData = await channelResponse.json()
+  
+    if (!channelData.items || channelData.items.length === 0) {
+      throw new Error('Channel not found')
+    }
+  
+    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads
+  
+    // Now get the recent videos from the uploads playlist
+    const videosResponse = await fetch(
+      `${YOUTUBE_API_BASE_URL}/playlistItems?part=snippet&maxResults=${maxResults}&playlistId=${uploadsPlaylistId}&key=${YOUTUBE_API_KEY}`
+    )
+  
+    if (!videosResponse.ok) {
+      throw new Error('Failed to fetch recent videos')
+    }
+  
+    const videosData = await videosResponse.json()
+  
+    if (!videosData.items || videosData.items.length === 0) {
+      return []
+    }
+  
+    // Get video IDs to fetch statistics and content details
+    const videoIds = videosData.items.map((item: any) => item.snippet.resourceId.videoId).join(',')
+  
+    const videoDetailsResponse = await fetch(
+      `${YOUTUBE_API_BASE_URL}/videos?part=statistics,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
+    )
+  
+    if (!videoDetailsResponse.ok) {
+      throw new Error('Failed to fetch video details')
+    }
+  
+    const videoDetailsData = await videoDetailsResponse.json()
+  
+    // Map video stats to video items
+    return videosData.items.map((item: any) => {
+      const videoId = item.snippet.resourceId.videoId
+      const details = videoDetailsData.items.find((detail: any) => detail.id === videoId)
+      const publishedDate = new Date(item.snippet.publishedAt)
+      const now = new Date()
+      const diffTime = Math.abs(now.getTime() - publishedDate.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  
+      let uploadTime = ''
+      if (diffDays < 1) {
+        const diffHours = Math.ceil(diffTime / (1000 * 60 * 60))
+        uploadTime = `First ${diffHours} hours`
+      } else {
+        uploadTime = `${diffDays} days ago`
+      }
+  
+      return {
+        title: item.snippet.title,
+        views: parseInt(details?.statistics.viewCount || '0'),
+        uploadTime,
+        thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url,
+        videoId: videoId,
+        duration: parseDuration(details?.contentDetails.duration || 'PT0S'),
+        likeCount: parseInt(details?.statistics.likeCount || '0'),
+      }
+    })
   }
