@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Innertube } from 'youtubei.js/web';
-import {
-  extractVideoId,
-  fetchTranscript,
-  formatTimestamp
-} from '@/lib/ythelper';
+import { extractVideoId, fetchTranscript } from '@/lib/ythelper';
 import { transcribeRateLimiter } from '@/lib/ratelimit';
 
 export async function POST(request: Request) {
