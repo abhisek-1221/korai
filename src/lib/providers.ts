@@ -19,4 +19,4 @@ export function getModel(modelName: string) {
 }
 
 // Default model
-export const DEFAULT_MODEL = 'gemini-1.5-flash';
+export const DEFAULT_MODEL = 'gemini-2.5-flash';
