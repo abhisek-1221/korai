@@ -69,3 +69,25 @@ export function extractVideoId(url: string): string | null {
   
     return null
   }
+
+  export async function getChannelIdFromUsername(username: string): Promise<string | null> {
+    try {
+      const response = await fetch(
+        `${YOUTUBE_API_BASE_URL}/search?part=snippet&q=${username}&type=channel&key=${YOUTUBE_API_KEY}`
+      )
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch channel ID')
+      }
+  
+      const data = await response.json()
+      if (data.items && data.items.length > 0) {
+        return data.items[0].snippet.channelId
+      }
+  
+      return null
+    } catch (error) {
+      console.error('Error getting channel ID from username:', error)
+      return null
+    }
+  }
