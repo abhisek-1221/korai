@@ -1,3 +1,5 @@
+import { ChannelData } from "./youtube"
+
 export const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3'
 export const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 
@@ -89,5 +91,33 @@ export function extractVideoId(url: string): string | null {
     } catch (error) {
       console.error('Error getting channel ID from username:', error)
       return null
+    }
+  }
+
+  export async function fetchChannelData(channelId: string): Promise<ChannelData> {
+    const response = await fetch(
+      `${YOUTUBE_API_BASE_URL}/channels?part=snippet,statistics,contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
+    )
+  
+    if (!response.ok) {
+      throw new Error('Failed to fetch channel data')
+    }
+  
+    const data = await response.json()
+  
+    if (!data.items || data.items.length === 0) {
+      throw new Error('Channel not found')
+    }
+  
+    const channel = data.items[0]
+  
+    return {
+      name: channel.snippet.title,
+      username: `@${channel.snippet.customUrl || channel.snippet.title.toLowerCase().replace(/\s+/g, '')}`,
+      videosCount: parseInt(channel.statistics.videoCount || '0'),
+      subscribers: parseInt(channel.statistics.subscriberCount || '0'),
+      totalViews: parseInt(channel.statistics.viewCount || '0'),
+      thumbnails: channel.snippet.thumbnails,
+      country: channel.snippet.country,
     }
   }
