@@ -1,4 +1,4 @@
-import { ChannelData, RecentVideo, ViewData } from "./youtube"
+import { ChannelData, RecentVideo, VideoData, ViewData } from "./youtube"
 
 export const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3'
 export const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
@@ -246,3 +246,61 @@ export function formatDurationForDisplay(seconds: number): string {
       return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
     }
   }
+
+  // Fetch video data from YouTube API
+export async function fetchVideoData(videoId: string): Promise<VideoData> {
+    // Fetch video details
+    const response = await fetch(
+      `${YOUTUBE_API_BASE_URL}/videos?part=snippet,statistics,contentDetails&id=${videoId}&key=${YOUTUBE_API_KEY}`
+    )
+  
+    if (!response.ok) {
+      throw new Error('Failed to fetch video details')
+    }
+  
+    const data = await response.json()
+  
+    if (!data.items || data.items.length === 0) {
+      throw new Error('Video not found')
+    }
+  
+    const video = data.items[0]
+    const channelId = video.snippet.channelId
+  
+    // Fetch channel details to get the channel name
+    const channelResponse = await fetch(
+      `${YOUTUBE_API_BASE_URL}/channels?part=snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`
+    )
+  
+    if (!channelResponse.ok) {
+      throw new Error('Failed to fetch channel details')
+    }
+  
+    const channelData = await channelResponse.json()
+    const channelName = channelData.items?.[0]?.snippet?.title || 'Unknown Channel'
+  
+    // Parse video data
+    const views = parseInt(video.statistics.viewCount || '0')
+    const likes = parseInt(video.statistics.likeCount || '0')
+    const comments = parseInt(video.statistics.commentCount || '0')
+    const duration = parseDuration(video.contentDetails.duration)
+  
+    return {
+      id: video.id,
+      title: video.snippet.title,
+      channel: channelName,
+      channelId: channelId,
+      views: views,
+      viewsFormatted: `${formatNumber(views)} views`,
+      published: formatDate(video.snippet.publishedAt),
+      description: video.snippet.description,
+      likes: likes,
+      likesFormatted: formatNumber(likes),
+      comments: comments,
+      commentsFormatted: formatNumber(comments),
+      duration: duration,
+      durationFormatted: formatDurationForDisplay(duration),
+      thumbnails: video.snippet.thumbnails,
+    }
+  }
+  
