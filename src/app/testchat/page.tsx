@@ -44,6 +44,16 @@ import {
   ReasoningTrigger
 } from '@/components/ai-elements/reasoning';
 import { Loader } from '@/components/ai-elements/loader';
+import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
+
+const suggestions = [
+  'Summarize this video in one or two sentences',
+  'What is the main topic or purpose of this video?',
+  'How did this video make you feel?',
+  'What are the key takeaways?',
+  'What emotional tone did the speaker use?',
+  'Who is the target audience?'
+];
 
 const models = [
   {
@@ -83,6 +93,20 @@ const ChatBotDemo = () => {
       }
     );
     setInput('');
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    sendMessage(
+      {
+        text: suggestion
+      },
+      {
+        body: {
+          model: model,
+          webSearch: webSearch
+        }
+      }
+    );
   };
 
   return (
@@ -172,6 +196,22 @@ const ChatBotDemo = () => {
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
+
+        <div>
+          {messages.length === 0 && (
+            <div className='mb-4'>
+              <Suggestions>
+                {suggestions.map((suggestion) => (
+                  <Suggestion
+                    key={suggestion}
+                    onClick={handleSuggestionClick}
+                    suggestion={suggestion}
+                  />
+                ))}
+              </Suggestions>
+            </div>
+          )}
+        </div>
 
         <PromptInput
           onSubmit={handleSubmit}
