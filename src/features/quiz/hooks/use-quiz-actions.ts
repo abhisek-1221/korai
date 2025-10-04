@@ -24,14 +24,23 @@ export const useQuizActions = () => {
   );
 
   const handleQuizSubmit = useCallback(() => {
+    console.log('Submit quiz clicked');
+    console.log('Quiz questions:', quiz.length);
+    console.log('User answers:', userAnswers);
+
     const allAnswered = userAnswers.every(
       (answer) => answer.selectedOption !== -1
     );
 
+    console.log('All questions answered?', allAnswered);
+
     if (!allAnswered) {
+      const unanswered = userAnswers.filter(
+        (a) => a.selectedOption === -1
+      ).length;
       toast({
         title: 'Warning',
-        description: 'Please answer all questions before submitting',
+        description: `Please answer all questions before submitting (${unanswered} unanswered)`,
         variant: 'destructive'
       });
       return;
@@ -46,6 +55,8 @@ export const useQuizActions = () => {
         correctCount++;
       }
     });
+
+    console.log('Score calculated:', correctCount, '/', quiz.length);
 
     setScore(correctCount);
     setIsSubmitted(true);

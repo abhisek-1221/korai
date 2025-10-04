@@ -8,6 +8,11 @@ import { useQuizStore, type QuizQuestion } from '../store/quiz-store';
 function parseQuizJSON(rawContent: string): QuizQuestion[] {
   let cleanedContent = rawContent.trim();
 
+  // Check if content is empty
+  if (!cleanedContent) {
+    throw new Error('Empty response received from API');
+  }
+
   // Remove markdown code blocks
   cleanedContent = cleanedContent
     .replace(/^```(?:json)?\s*/gm, '')
@@ -19,6 +24,11 @@ function parseQuizJSON(rawContent: string): QuizQuestion[] {
 
   if (jsonMatch) {
     cleanedContent = jsonMatch[0];
+  }
+
+  // Validate we have something to parse
+  if (!cleanedContent || cleanedContent.length < 2) {
+    throw new Error('No valid JSON content found in response');
   }
 
   try {
@@ -109,70 +119,26 @@ export const useGenerateQuiz = () => {
           signal: abortSignal
         });
 
-        // Handle rate limiting (disabled - unlimited attempts)
-        if (response.status === 429) {
-          // Rate limiting is disabled, this should not occur
-          console.warn(
-            'Rate limiting response received but limits are disabled'
-          );
-        }
-
-        // Handle authentication
-        if (response.status === 401) {
-          toast({
-            title: 'Authentication Required',
-            description: 'Please sign in to generate quizzes.',
-            variant: 'destructive'
-          });
-          return false;
-        }
-
         if (!response.ok) {
-          throw new Error('Failed to generate quiz');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to generate quiz');
         }
 
-        // Usage tracking disabled - unlimited attempts
+        // Get the JSON response
+        const data = await response.json();
+        const quizText = data.text;
 
-        // Read streaming response
-        const reader = response.body?.getReader();
-        if (!reader) {
-          throw new Error('Response body is not readable');
+        // Validate we received data
+        if (!quizText || quizText.trim().length === 0) {
+          console.error('No data received from API');
+          throw new Error('No data received from API. Please try again.');
         }
 
-        let streamedQuiz = '';
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('0:')) {
-              try {
-                streamedQuiz += JSON.parse(line.slice(2));
-              } catch (e) {
-                console.warn('Failed to parse line:', line);
-              }
-            }
-          }
-        }
-
-        // Process remaining buffer
-        if (buffer && buffer.startsWith('0:')) {
-          try {
-            streamedQuiz += JSON.parse(buffer.slice(2));
-          } catch (e) {
-            console.warn('Failed to parse buffer:', buffer);
-          }
-        }
+        console.log('Quiz text length:', quizText.length);
+        console.log('First 500 chars:', quizText.substring(0, 500));
 
         // Parse the complete quiz
-        const parsedQuestions = parseQuizJSON(streamedQuiz);
+        const parsedQuestions = parseQuizJSON(quizText);
 
         if (parsedQuestions.length === 0) {
           throw new Error('No valid questions generated');

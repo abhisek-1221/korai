@@ -78,7 +78,7 @@ const initialState: QuizState = {
   videoDetails: null,
   quiz: [],
   userAnswers: [],
-  selectedLLM: 'gpt-4o-mini',
+  selectedLLM: 'gemini-2.5-flash',
   numQuestions: '5',
   showFullDescription: false,
   isLoading: false,

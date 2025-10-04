@@ -1,60 +1,11 @@
-import { streamText } from 'ai';
+import { generateText } from 'ai';
 import { NextResponse } from 'next/server';
-import { userQuizLimiter } from '@/lib/ratelimit';
 import { getModel, DEFAULT_MODEL } from '@/lib/providers';
-import { auth } from '@clerk/nextjs/server';
 
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {
-    // Get authenticated user
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Check user-specific rate limit
-    let rateLimitResult;
-    try {
-      rateLimitResult = await userQuizLimiter.limit(`quiz_${userId}`);
-    } catch (error) {
-      console.error('Rate limiter error:', error);
-      return NextResponse.json(
-        {
-          error:
-            'Service temporarily unavailable. Please try again in a moment.'
-        },
-        { status: 503 }
-      );
-    }
-
-    const { success, limit, remaining, reset } = rateLimitResult;
-
-    if (!success) {
-      return NextResponse.json(
-        {
-          error:
-            'Quiz limit exceeded. You have used all 5 quiz attempts for today.',
-          limit,
-          remaining: 0,
-          reset
-        },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': reset.toString()
-          }
-        }
-      );
-    }
-
     const { transcript, numQuestions, model } = await request.json();
 
     if (!transcript) {
@@ -104,7 +55,7 @@ ${transcript}
 
 Remember to respond only with valid JSON in the exact format specified.`;
 
-    const result = await streamText({
+    const result = await generateText({
       model: selectedModel as any,
       system: systemPrompt,
       prompt: userPrompt,
@@ -112,13 +63,7 @@ Remember to respond only with valid JSON in the exact format specified.`;
       maxOutputTokens: 4000
     });
 
-    return result.toTextStreamResponse({
-      headers: {
-        'X-RateLimit-Limit': limit.toString(),
-        'X-RateLimit-Remaining': remaining.toString(),
-        'X-RateLimit-Reset': reset.toString()
-      }
-    });
+    return NextResponse.json({ text: result.text });
   } catch (error: any) {
     console.error('Quiz generation error:', error);
     return NextResponse.json(
