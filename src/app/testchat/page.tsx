@@ -45,14 +45,34 @@ import {
 } from '@/components/ai-elements/reasoning';
 import { Loader } from '@/components/ai-elements/loader';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
+import { FileText, Search, SquareActivity, Sparkles } from 'lucide-react';
 
-const suggestions = [
-  'Summarize this video in one or two sentences',
-  'What is the main topic or purpose of this video?',
-  'How did this video make you feel?',
-  'What are the key takeaways?',
-  'What emotional tone did the speaker use?',
-  'Who is the target audience?'
+const suggestionGroups = [
+  {
+    label: 'Summary',
+    icon: FileText,
+    items: [
+      'Summarize this video in one or two sentences',
+      'What are the main points or segments covered?'
+    ]
+  },
+  {
+    label: 'Comprehension',
+    icon: Search,
+    items: [
+      'What is the main topic or purpose of this video?',
+      'What are the key takeaways?',
+      'Who is the target audience?'
+    ]
+  },
+  {
+    label: 'Reflect',
+    icon: SquareActivity,
+    items: [
+      'How did this video make you feel?',
+      'What emotional tone did the speaker use?'
+    ]
+  }
 ];
 
 const models = [
@@ -110,163 +130,195 @@ const ChatBotDemo = () => {
   };
 
   return (
-    <div className='relative mx-auto size-full h-screen max-w-4xl p-6'>
-      <div className='flex h-full flex-col'>
-        <Conversation className='h-full'>
-          <ConversationContent>
-            {messages.map((message) => (
-              <div key={message.id}>
-                {message.role === 'assistant' &&
-                  message.parts.filter((part) => part.type === 'source-url')
-                    .length > 0 && (
-                    <Sources>
-                      <SourcesTrigger
-                        count={
-                          message.parts.filter(
-                            (part) => part.type === 'source-url'
-                          ).length
-                        }
+    <div className='relative mx-auto size-full h-screen max-w-5xl p-6'>
+      <div className='flex h-full flex-col gap-4'>
+        {/* Empty State with Welcome Message */}
+        {messages.length === 0 && (
+          <div className='flex flex-1 flex-col items-center justify-center gap-8 pb-32'>
+            <div className='flex flex-col items-center gap-4 text-center'>
+              <div className='bg-primary/10 flex size-16 items-center justify-center rounded-2xl'>
+                <Sparkles className='text-primary size-8' />
+              </div>
+              <div className='space-y-2'>
+                <h1 className='text-3xl font-bold tracking-tight'>
+                  How can I help you today?
+                </h1>
+                <p className='text-muted-foreground text-lg'>
+                  Choose a suggestion below or ask me anything
+                </p>
+              </div>
+            </div>
+
+            <div className='w-full max-w-3xl space-y-6'>
+              {suggestionGroups.map((group) => (
+                <div key={group.label} className='space-y-3'>
+                  <div className='flex items-center gap-2 px-2'>
+                    <group.icon className='text-muted-foreground size-4' />
+                    <h3 className='text-muted-foreground text-sm font-semibold'>
+                      {group.label}
+                    </h3>
+                  </div>
+                  <Suggestions className='gap-2'>
+                    {group.items.map((suggestion) => (
+                      <Suggestion
+                        key={suggestion}
+                        onClick={handleSuggestionClick}
+                        suggestion={suggestion}
+                        className='h-auto px-4 py-3 text-left whitespace-normal'
                       />
-                      {message.parts
-                        .filter((part) => part.type === 'source-url')
-                        .map((part, i) => (
-                          <SourcesContent key={`${message.id}-${i}`}>
-                            <Source
-                              key={`${message.id}-${i}`}
-                              href={part.url}
-                              title={part.url}
-                            />
-                          </SourcesContent>
-                        ))}
-                    </Sources>
-                  )}
-                {message.parts.map((part, i) => {
-                  switch (part.type) {
-                    case 'text':
-                      return (
-                        <Fragment key={`${message.id}-${i}`}>
-                          <Message from={message.role}>
-                            <MessageContent>
-                              <Response>{part.text}</Response>
-                            </MessageContent>
-                          </Message>
-                          {message.role === 'assistant' &&
-                            i === messages.length - 1 && (
-                              <Actions className='mt-2'>
-                                {/* <Action
+                    ))}
+                  </Suggestions>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Conversation Area */}
+        {messages.length > 0 && (
+          <Conversation className='flex-1'>
+            <ConversationContent>
+              {messages.map((message) => (
+                <div key={message.id}>
+                  {message.role === 'assistant' &&
+                    message.parts.filter((part) => part.type === 'source-url')
+                      .length > 0 && (
+                      <Sources>
+                        <SourcesTrigger
+                          count={
+                            message.parts.filter(
+                              (part) => part.type === 'source-url'
+                            ).length
+                          }
+                        />
+                        {message.parts
+                          .filter((part) => part.type === 'source-url')
+                          .map((part, i) => (
+                            <SourcesContent key={`${message.id}-${i}`}>
+                              <Source
+                                key={`${message.id}-${i}`}
+                                href={part.url}
+                                title={part.url}
+                              />
+                            </SourcesContent>
+                          ))}
+                      </Sources>
+                    )}
+                  {message.parts.map((part, i) => {
+                    switch (part.type) {
+                      case 'text':
+                        return (
+                          <Fragment key={`${message.id}-${i}`}>
+                            <Message from={message.role}>
+                              <MessageContent>
+                                <Response>{part.text}</Response>
+                              </MessageContent>
+                            </Message>
+                            {message.role === 'assistant' &&
+                              i === messages.length - 1 && (
+                                <Actions className='mt-2'>
+                                  {/* <Action
                                 onClick={() => regenerate()}
                                 label="Retry"
                               >
                                 <RefreshCcwIcon className="size-3" />
                               </Action> */}
-                                <Action
-                                  onClick={() =>
-                                    navigator.clipboard.writeText(part.text)
-                                  }
-                                  label='Copy'
-                                >
-                                  <CopyIcon className='size-3' />
-                                </Action>
-                              </Actions>
-                            )}
-                        </Fragment>
-                      );
-                    case 'reasoning':
-                      return (
-                        <Reasoning
-                          key={`${message.id}-${i}`}
-                          className='w-full'
-                          isStreaming={
-                            status === 'streaming' &&
-                            i === message.parts.length - 1 &&
-                            message.id === messages.at(-1)?.id
-                          }
-                        >
-                          <ReasoningTrigger />
-                          <ReasoningContent>{part.text}</ReasoningContent>
-                        </Reasoning>
-                      );
-                    default:
-                      return null;
-                  }
-                })}
-              </div>
-            ))}
-            {status === 'submitted' && <Loader />}
-          </ConversationContent>
-          <ConversationScrollButton />
-        </Conversation>
+                                  <Action
+                                    onClick={() =>
+                                      navigator.clipboard.writeText(part.text)
+                                    }
+                                    label='Copy'
+                                  >
+                                    <CopyIcon className='size-3' />
+                                  </Action>
+                                </Actions>
+                              )}
+                          </Fragment>
+                        );
+                      case 'reasoning':
+                        return (
+                          <Reasoning
+                            key={`${message.id}-${i}`}
+                            className='w-full'
+                            isStreaming={
+                              status === 'streaming' &&
+                              i === message.parts.length - 1 &&
+                              message.id === messages.at(-1)?.id
+                            }
+                          >
+                            <ReasoningTrigger />
+                            <ReasoningContent>{part.text}</ReasoningContent>
+                          </Reasoning>
+                        );
+                      default:
+                        return null;
+                    }
+                  })}
+                </div>
+              ))}
+              {status === 'submitted' && <Loader />}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
+        )}
 
-        <div>
-          {messages.length === 0 && (
-            <div className='mb-4'>
-              <Suggestions>
-                {suggestions.map((suggestion) => (
-                  <Suggestion
-                    key={suggestion}
-                    onClick={handleSuggestionClick}
-                    suggestion={suggestion}
-                  />
-                ))}
-              </Suggestions>
-            </div>
-          )}
+        {/* Input Area */}
+        <div className='bg-background/95 supports-[backdrop-filter]:bg-background/60 border-t backdrop-blur'>
+          <PromptInput
+            onSubmit={handleSubmit}
+            className='mt-0 pt-4'
+            globalDrop
+            multiple
+          >
+            <PromptInputBody>
+              <PromptInputAttachments>
+                {(attachment) => <PromptInputAttachment data={attachment} />}
+              </PromptInputAttachments>
+              <PromptInputTextarea
+                onChange={(e) => setInput(e.target.value)}
+                value={input}
+              />
+            </PromptInputBody>
+            <PromptInputToolbar>
+              <PromptInputTools>
+                <PromptInputActionMenu>
+                  <PromptInputActionMenuTrigger />
+                  <PromptInputActionMenuContent>
+                    <PromptInputActionAddAttachments />
+                  </PromptInputActionMenuContent>
+                </PromptInputActionMenu>
+                <PromptInputButton
+                  variant={webSearch ? 'default' : 'ghost'}
+                  onClick={() => setWebSearch(!webSearch)}
+                >
+                  <GlobeIcon size={16} />
+                  <span>Search</span>
+                </PromptInputButton>
+                <PromptInputModelSelect
+                  onValueChange={(value) => {
+                    setModel(value);
+                  }}
+                  value={model}
+                >
+                  <PromptInputModelSelectTrigger>
+                    <PromptInputModelSelectValue />
+                  </PromptInputModelSelectTrigger>
+                  <PromptInputModelSelectContent>
+                    {models.map((model) => (
+                      <PromptInputModelSelectItem
+                        key={model.value}
+                        value={model.value}
+                      >
+                        {model.name}
+                      </PromptInputModelSelectItem>
+                    ))}
+                  </PromptInputModelSelectContent>
+                </PromptInputModelSelect>
+              </PromptInputTools>
+              <PromptInputSubmit disabled={!input && !status} status={status} />
+            </PromptInputToolbar>
+          </PromptInput>
         </div>
-
-        <PromptInput
-          onSubmit={handleSubmit}
-          className='mt-4'
-          globalDrop
-          multiple
-        >
-          <PromptInputBody>
-            <PromptInputAttachments>
-              {(attachment) => <PromptInputAttachment data={attachment} />}
-            </PromptInputAttachments>
-            <PromptInputTextarea
-              onChange={(e) => setInput(e.target.value)}
-              value={input}
-            />
-          </PromptInputBody>
-          <PromptInputToolbar>
-            <PromptInputTools>
-              <PromptInputActionMenu>
-                <PromptInputActionMenuTrigger />
-                <PromptInputActionMenuContent>
-                  <PromptInputActionAddAttachments />
-                </PromptInputActionMenuContent>
-              </PromptInputActionMenu>
-              <PromptInputButton
-                variant={webSearch ? 'default' : 'ghost'}
-                onClick={() => setWebSearch(!webSearch)}
-              >
-                <GlobeIcon size={16} />
-                <span>Search</span>
-              </PromptInputButton>
-              <PromptInputModelSelect
-                onValueChange={(value) => {
-                  setModel(value);
-                }}
-                value={model}
-              >
-                <PromptInputModelSelectTrigger>
-                  <PromptInputModelSelectValue />
-                </PromptInputModelSelectTrigger>
-                <PromptInputModelSelectContent>
-                  {models.map((model) => (
-                    <PromptInputModelSelectItem
-                      key={model.value}
-                      value={model.value}
-                    >
-                      {model.name}
-                    </PromptInputModelSelectItem>
-                  ))}
-                </PromptInputModelSelectContent>
-              </PromptInputModelSelect>
-            </PromptInputTools>
-            <PromptInputSubmit disabled={!input && !status} status={status} />
-          </PromptInputToolbar>
-        </PromptInput>
       </div>
     </div>
   );
