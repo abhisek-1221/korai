@@ -422,6 +422,7 @@ Write the complete thread now:`;
       if (!response.ok) {
         throw new Error('Failed to generate threads');
       }
+      console.log('Thr:', response.body);
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
