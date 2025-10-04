@@ -341,6 +341,11 @@ export default function QuizViewPage() {
                                 const showWrong =
                                   isSubmitted && isSelected && !isCorrectOption;
 
+                                // Remove any existing letter prefixes (A), A., A:, etc.
+                                const cleanOption = option
+                                  .replace(/^[A-D][.):\s]+/i, '')
+                                  .trim();
+
                                 return (
                                   <button
                                     key={optionIndex}
@@ -366,7 +371,7 @@ export default function QuizViewPage() {
                                       <span className='font-medium'>
                                         {String.fromCharCode(65 + optionIndex)}.
                                       </span>
-                                      <span>{option}</span>
+                                      <span>{cleanOption}</span>
                                     </div>
                                   </button>
                                 );
