@@ -46,6 +46,14 @@ export const navItems: NavItem[] = [
     items: [] // No child items
   },
   {
+    title: 'Quiz Generator',
+    url: '/dashboard/quiz',
+    icon: 'help',
+    shortcut: ['q', 'q'],
+    isActive: false,
+    items: [] // No child items
+  },
+  {
     title: 'Account',
     url: '#', // Placeholder as there is no direct link for the parent
     icon: 'billing',
