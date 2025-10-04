@@ -103,7 +103,7 @@ export default function TranscribeViewPage() {
 
   return (
     <PageContainer scrollable>
-      <div className='space-y-4'>
+      <div className='w-full space-y-4'>
         <div className='flex items-start justify-between'>
           <Heading
             title='Video Transcribe'
