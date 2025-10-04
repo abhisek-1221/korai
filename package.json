@@ -94,6 +94,7 @@
     "recharts": "^2.15.1",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
+    "sarvamai": "^0.1.9",
     "sharp": "^0.33.5",
     "shiki": "^3.13.0",
     "sonner": "^2.0.7",
