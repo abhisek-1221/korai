@@ -34,6 +34,7 @@ import {
   IconMessageCircle,
   IconMicrophone
 } from '@tabler/icons-react';
+import { Youtube, YoutubeIcon } from 'lucide-react';
 
 export type Icon = React.ComponentType<IconProps>;
 
@@ -70,5 +71,6 @@ export const Icons = {
   twitter: IconBrandTwitter,
   check: IconCheck,
   chat: IconMessageCircle,
-  mic: IconMicrophone
+  mic: IconMicrophone,
+  youtube: YoutubeIcon
 };

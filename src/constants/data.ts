@@ -30,63 +30,40 @@ export const navItems: NavItem[] = [
     items: [] // No child items
   },
   {
-    title: 'Transcribe',
-    url: '/dashboard/transcribe',
-    icon: 'media',
-    shortcut: ['t', 't'],
+    title: 'Youtube',
+    url: '#',
+    icon: 'youtube',
     isActive: false,
-    items: [] // No child items
-  },
-  {
-    title: 'Analyze Playlist',
-    url: '/dashboard/analyze',
-    icon: 'post',
-    shortcut: ['a', 'a'],
-    isActive: false,
-    items: [] // No child items
-  },
-  {
-    title: 'Quiz Generator',
-    url: '/dashboard/quiz',
-    icon: 'help',
-    shortcut: ['q', 'q'],
-    isActive: false,
-    items: [] // No child items
-  },
-  {
-    title: 'Video Chat',
-    url: '/dashboard/chat',
-    icon: 'chat',
-    shortcut: ['c', 'c'],
-    isActive: false,
-    items: [] // No child items
-  },
-  {
-    title: 'Talk with Video',
-    url: '/dashboard/voice-chat',
-    icon: 'mic',
-    shortcut: ['v', 'v'],
-    isActive: false,
-    items: [] // No child items
-  },
-  {
-    title: 'Account',
-    url: '#', // Placeholder as there is no direct link for the parent
-    icon: 'billing',
-    isActive: true,
-
     items: [
       {
-        title: 'Profile',
-        url: '/dashboard/profile',
-        icon: 'userPen',
-        shortcut: ['m', 'm']
+        title: 'Transcribe',
+        url: '/dashboard/transcribe',
+        icon: 'media',
+        shortcut: ['t', 't']
       },
       {
-        title: 'Login',
-        shortcut: ['l', 'l'],
-        url: '/',
-        icon: 'login'
+        title: 'Analyze Playlist',
+        url: '/dashboard/analyze',
+        icon: 'post',
+        shortcut: ['a', 'a']
+      },
+      {
+        title: 'Quiz Generator',
+        url: '/dashboard/quiz',
+        icon: 'help',
+        shortcut: ['q', 'q']
+      },
+      {
+        title: 'Video Chat',
+        url: '/dashboard/chat',
+        icon: 'chat',
+        shortcut: ['c', 'c']
+      },
+      {
+        title: 'Talk with Video',
+        url: '/dashboard/voice-chat',
+        icon: 'mic',
+        shortcut: ['v', 'v']
       }
     ]
   },
