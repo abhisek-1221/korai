@@ -31,6 +31,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import FeatureCard from '@/components/hsr/FeatureCard';
+import PageContainer from '@/components/layout/page-container';
+import { Heading } from '@/components/ui/heading';
 
 interface Message {
   id: string;
@@ -568,75 +570,74 @@ export default function VoiceChatPage() {
   };
 
   return (
-    <div className='flex min-h-screen items-center justify-center bg-zinc-950 p-2 text-white sm:p-4 lg:p-6 xl:p-8'>
-      <Card
-        className={`w-full max-w-sm rounded-2xl border-zinc-800 bg-black shadow-xl shadow-stone-600 sm:max-w-md md:max-w-lg lg:max-w-4xl xl:max-w-6xl 2xl:max-w-7xl ${
-          hasTranscript ? 'lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl' : ''
-        }`}
-      >
-        <CardContent className='relative flex min-h-[500px] flex-col p-3 sm:min-h-[600px] sm:p-4 md:min-h-[700px] md:p-6 lg:min-h-[800px] lg:p-8 xl:p-10'>
-          <div className='flex flex-1 flex-col pb-20'>
-            {!hasTranscript && <FeatureCard type='voice-chat' />}
+    <PageContainer scrollable>
+      <div className='w-full space-y-4'>
+        <div className='flex items-start justify-between'>
+          <Heading
+            title='Voice Chat'
+            description='Have voice conversations about YouTube videos'
+          />
+        </div>
 
-            {/* Video URL Input - always show, but content below only if transcript */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className='mx-auto w-full'
-            >
-              <form onSubmit={handleVideoSubmit} className='my-4 space-y-4'>
-                <div className='flex gap-3'>
-                  <div className='relative flex-1'>
-                    <Youtube className='absolute top-3 left-3 h-5 w-5 text-orange-400' />
-                    <Input
-                      type='url'
-                      placeholder='Enter YouTube URL...'
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      className='border-orange-500/20 bg-black/40 pl-11 text-white placeholder:text-gray-400 focus:border-orange-500/50'
-                      disabled={loading}
-                    />
-                  </div>
-                  <Select
-                    value={selectedLanguage}
-                    onValueChange={setSelectedLanguage}
-                  >
-                    <SelectTrigger className='w-48 border-orange-500/20 bg-black/40 text-white focus:border-orange-500/50'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {languages.map((lang) => (
-                          <SelectItem key={lang.code} value={lang.code}>
-                            {lang.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type='submit'
-                    disabled={loading || !videoUrl.trim()}
-                    className='border-orange-500 bg-orange-600 text-white hover:bg-orange-700'
-                  >
-                    {loading ? (
-                      <Loader2 className='h-4 w-4 animate-spin' />
-                    ) : (
-                      <ArrowUp className='h-4 w-4' />
-                    )}
-                  </Button>
+        {/* Input Form */}
+        <Card>
+          <CardContent className='p-4'>
+            <form onSubmit={handleVideoSubmit} className='space-y-4'>
+              <div className='flex gap-3'>
+                <div className='relative flex-1'>
+                  <Youtube className='text-muted-foreground absolute top-3 left-3 h-5 w-5' />
+                  <Input
+                    type='url'
+                    placeholder='Enter YouTube URL...'
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    className='pl-11'
+                    disabled={loading}
+                  />
                 </div>
-              </form>
-            </motion.div>
-
-            {hasTranscript && (
-              <div className='flex flex-1 flex-col'>
-                {/* Chat Area */}
-                <ScrollArea
-                  ref={scrollAreaRef}
-                  className='h-[400px] flex-1 pr-4'
+                <Select
+                  value={selectedLanguage}
+                  onValueChange={setSelectedLanguage}
                 >
+                  <SelectTrigger className='w-48'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <Button type='submit' disabled={loading || !videoUrl.trim()}>
+                  {loading ? (
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                  ) : (
+                    <ArrowUp className='h-4 w-4' />
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Welcome Message - Only shown initially */}
+        {!hasTranscript && <FeatureCard type='voice-chat' />}
+
+        {/* Chat Interface */}
+        {hasTranscript && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className='space-y-4'
+          >
+            <Card>
+              <CardContent className='p-4'>
+                {/* Chat Area */}
+                <ScrollArea ref={scrollAreaRef} className='h-[500px] pr-4'>
                   <AnimatePresence>
                     {messages.map((message) => (
                       <motion.div
@@ -653,10 +654,10 @@ export default function VoiceChatPage() {
                         <div
                           className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                             message.role === 'user'
-                              ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white'
+                              ? 'bg-primary text-primary-foreground'
                               : message.role === 'system'
-                                ? 'border border-orange-500/20 bg-orange-900/20 text-orange-200'
-                                : 'border border-orange-500/20 bg-black/40 text-white'
+                                ? 'bg-secondary/50 text-secondary-foreground border'
+                                : 'bg-secondary text-secondary-foreground border'
                           }`}
                         >
                           <div className='flex items-start gap-3'>
@@ -677,7 +678,6 @@ export default function VoiceChatPage() {
                                     size='sm'
                                     variant='outline'
                                     onClick={() => playAudio(message.audioUrl!)}
-                                    className='border-orange-500/30 bg-black/20 text-white hover:border-orange-500/50 hover:bg-orange-600/20'
                                   >
                                     {isPlayingAudio ? (
                                       <VolumeX className='h-4 w-4' />
@@ -687,7 +687,7 @@ export default function VoiceChatPage() {
                                     Play Audio
                                   </Button>
                                   {message.language && (
-                                    <span className='text-xs text-orange-400'>
+                                    <span className='text-muted-foreground text-xs'>
                                       {
                                         languages.find(
                                           (l) => l.code === message.language
@@ -710,11 +710,9 @@ export default function VoiceChatPage() {
                       animate={{ opacity: 1, y: 0 }}
                       className='mb-6 flex justify-center'
                     >
-                      <div className='flex items-center gap-3 rounded-2xl border border-orange-500/20 bg-black/40 px-6 py-4'>
-                        <Loader2 className='h-5 w-5 animate-spin text-orange-500' />
-                        <span className='text-white'>
-                          Processing your speech...
-                        </span>
+                      <div className='bg-secondary/50 flex items-center gap-3 rounded-2xl border px-6 py-4'>
+                        <Loader2 className='text-primary h-5 w-5 animate-spin' />
+                        <span>Processing your speech...</span>
                       </div>
                     </motion.div>
                   )}
@@ -726,29 +724,30 @@ export default function VoiceChatPage() {
                     <Button
                       onClick={toggleRecording}
                       disabled={!hasTranscript || isProcessingAudio}
+                      size='icon'
                       className={`relative h-16 w-16 rounded-full transition-all duration-200 ${
                         isRecording
-                          ? 'animate-pulse bg-red-600 shadow-lg shadow-red-500/30 hover:bg-red-700'
-                          : 'bg-gradient-to-r from-orange-600 to-red-600 shadow-lg shadow-orange-500/30 hover:from-orange-700 hover:to-red-700'
+                          ? 'bg-destructive hover:bg-destructive/90 animate-pulse shadow-lg'
+                          : ''
                       } ${!hasTranscript ? 'cursor-not-allowed opacity-50' : ''}`}
                     >
                       {isProcessingAudio ? (
-                        <Loader2 className='h-6 w-6 animate-spin text-white' />
+                        <Loader2 className='h-6 w-6 animate-spin' />
                       ) : isRecording ? (
-                        <MicOff className='h-6 w-6 text-white' />
+                        <MicOff className='h-6 w-6' />
                       ) : (
-                        <Mic className='h-6 w-6 text-white' />
+                        <Mic className='h-6 w-6' />
                       )}
                     </Button>
 
                     {/* Audio level indicator */}
                     {isRecording && (
-                      <div className='absolute -inset-2 animate-ping rounded-full border-2 border-red-400 opacity-75' />
+                      <div className='border-primary absolute -inset-2 animate-ping rounded-full border-2 opacity-75' />
                     )}
 
                     {isRecording && audioLevel > 0 && (
                       <div
-                        className='absolute -inset-1 rounded-full border-2 border-orange-400 transition-all duration-100'
+                        className='border-primary absolute -inset-1 rounded-full border-2 transition-all duration-100'
                         style={{
                           transform: `scale(${1 + (audioLevel / 255) * 0.5})`,
                           opacity: 0.7 + (audioLevel / 255) * 0.3
@@ -763,7 +762,7 @@ export default function VoiceChatPage() {
                       onClick={forceStopRecording}
                       variant='outline'
                       size='sm'
-                      className='border-red-500/30 bg-red-900/20 text-red-300 hover:border-red-500/50 hover:bg-red-900/40'
+                      className='text-destructive hover:bg-destructive/10'
                     >
                       Force Stop
                     </Button>
@@ -772,7 +771,7 @@ export default function VoiceChatPage() {
 
                 {/* Instructions */}
                 <div className='mt-4 text-center'>
-                  <p className='text-sm text-gray-400'>
+                  <p className='text-muted-foreground text-sm'>
                     {!hasTranscript
                       ? 'Load a YouTube video to start voice conversation'
                       : isRecording
@@ -782,19 +781,19 @@ export default function VoiceChatPage() {
                           : 'Click microphone to start speaking'}
                   </p>
                   {isRecording && (
-                    <p className='mt-1 text-xs text-orange-400'>
+                    <p className='text-muted-foreground mt-1 text-xs'>
                       Recording active - audio level: {Math.round(audioLevel)}
                     </p>
                   )}
                 </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </div>
 
       {/* Hidden audio element for playback */}
       <audio ref={audioRef} style={{ display: 'none' }} />
-    </div>
+    </PageContainer>
   );
 }
