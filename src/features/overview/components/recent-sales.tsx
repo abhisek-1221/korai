@@ -6,7 +6,7 @@ import {
   CardDescription
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Video, Sparkles } from 'lucide-react';
+import { Video, Sparkles, Activity } from 'lucide-react';
 
 const recentClipsData = [
   {
@@ -74,7 +74,7 @@ export function RecentSales() {
               </div>
               <div className='flex flex-col items-end gap-1'>
                 <Badge variant='secondary' className='flex items-center gap-1'>
-                  <Sparkles className='h-3 w-3' />
+                  <Activity className='h-3 w-3' />
                   {video.viralScore}
                 </Badge>
                 <span
