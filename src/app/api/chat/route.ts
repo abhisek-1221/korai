@@ -90,35 +90,101 @@ import {
   convertToModelMessages,
   smoothStream
 } from 'ai';
+import { NextResponse } from 'next/server';
 import { getModel, DEFAULT_MODEL } from '@/lib/providers';
+import { userChatLimiter } from '@/lib/ratelimit';
+import { auth } from '@clerk/nextjs/server';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const {
-    messages,
-    model,
-    webSearch
-  }: {
-    messages: UIMessage[];
-    model: string;
-    webSearch: boolean;
-  } = await req.json();
+  try {
+    // Get authenticated user
+    const { userId } = await auth();
 
-  const selectedModel = getModel(DEFAULT_MODEL);
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
-  const result = streamText({
-    model: webSearch ? 'perplexity/sonar' : (selectedModel as any),
-    messages: convertToModelMessages(messages),
-    system:
-      'You are a helpful assistant that can answer questions and help with tasks',
-    experimental_transform: smoothStream()
-  });
+    // Check user-specific rate limit
+    let rateLimitResult;
+    try {
+      rateLimitResult = await userChatLimiter.limit(`chat_${userId}`);
+    } catch (error) {
+      console.error('Rate limiter error:', error);
+      return NextResponse.json(
+        {
+          error:
+            'Service temporarily unavailable. Please try again in a moment.'
+        },
+        { status: 503 }
+      );
+    }
 
-  // send sources and reasoning back to the client
-  return result.toUIMessageStreamResponse({
-    sendSources: true,
-    sendReasoning: true
-  });
+    const { success, limit, remaining, reset } = rateLimitResult;
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          error:
+            'Chat limit exceeded. You have used all 30 chat attempts for today.',
+          limit,
+          remaining: 0,
+          reset
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': reset.toString()
+          }
+        }
+      );
+    }
+
+    const {
+      messages,
+      model,
+      webSearch,
+      system
+    }: {
+      messages: UIMessage[];
+      model: string;
+      webSearch: boolean;
+      system?: string;
+    } = await req.json();
+
+    const selectedModel = getModel(DEFAULT_MODEL);
+
+    const result = streamText({
+      model: webSearch ? 'perplexity/sonar' : (selectedModel as any),
+      messages: convertToModelMessages(messages),
+      system:
+        system ||
+        'You are a helpful assistant that can answer questions and help with tasks',
+      experimental_transform: smoothStream()
+    });
+
+    // send sources and reasoning back to the client with rate limit headers
+    return result.toUIMessageStreamResponse({
+      sendSources: true,
+      sendReasoning: true,
+      headers: {
+        'X-RateLimit-Limit': limit.toString(),
+        'X-RateLimit-Remaining': remaining.toString(),
+        'X-RateLimit-Reset': reset.toString()
+      }
+    });
+  } catch (error) {
+    console.error('Error in chat route:', error);
+    return NextResponse.json(
+      { error: 'Failed to process chat request' },
+      { status: 500 }
+    );
+  }
 }

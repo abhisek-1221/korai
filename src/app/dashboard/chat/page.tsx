@@ -1,5 +1,5 @@
-import ChatViewPage from '@/features/chat/components/chat-view-page';
+import VideoChatPage from '@/features/chat/components/video-chat-page';
 
 export default function DashboardChatPage() {
-  return <ChatViewPage />;
+  return <VideoChatPage />;
 }
