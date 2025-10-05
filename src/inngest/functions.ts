@@ -22,6 +22,52 @@ interface IdentifyClipsResponse {
   youtube_url: string;
 }
 
+interface ProcessClipData {
+  start: number;
+  end: number;
+}
+
+interface ProcessClipsPayload {
+  s3_key: string;
+  clips: ProcessClipData[];
+  prompt: string;
+  target_language: string | null;
+  aspect_ratio: string;
+  subtitles: boolean;
+  subtitle_customization: {
+    enabled: boolean;
+    position: string;
+    font_size: number;
+    font_family: string;
+    font_color: string;
+    outline_color: string;
+    outline_width: number;
+    background_color: string | null;
+    background_opacity: number;
+    shadow_enabled: boolean;
+    shadow_color: string;
+    shadow_offset: number;
+    max_words_per_line: number;
+    margin_horizontal: number;
+    margin_vertical: number;
+    fade_in_duration: number;
+    fade_out_duration: number;
+    karaoke_enabled: boolean;
+    karaoke_highlight_color: string;
+    karaoke_popup_scale: number;
+  };
+}
+
+interface ProcessedClipResponse {
+  start: number;
+  end: number;
+  s3_key: string;
+}
+
+interface ProcessClipsResponse {
+  processed_clips: ProcessedClipResponse[];
+}
+
 export const identifyClips = inngest.createFunction(
   { id: 'identify-clips', name: 'Identify Viral Clips from YouTube Video' },
   { event: 'video/identify.clips' },
@@ -117,6 +163,109 @@ export const identifyClips = inngest.createFunction(
       videoId: videoData.video.id,
       s3Key: videoData.s3Key,
       totalClips: clipsResponse.total_clips
+    };
+  }
+);
+
+export const processClips = inngest.createFunction(
+  { id: 'process-clips', name: 'Process and Export Viral Clips' },
+  { event: 'clips/process' },
+  async ({ event, step }) => {
+    const {
+      videoId,
+      s3Key,
+      selectedClips,
+      targetLanguage,
+      aspectRatio,
+      userId
+    } = event.data;
+
+    // Step 1: Call the backend API to process clips
+    const processedResponse = await step.run(
+      'call-process-clips-api',
+      async () => {
+        const apiUrl = process.env.PROCESS_CLIPS_API_URL;
+
+        if (!apiUrl) {
+          throw new Error(
+            'PROCESS_CLIPS_API_URL environment variable is not set'
+          );
+        }
+
+        const payload: ProcessClipsPayload = {
+          s3_key: s3Key,
+          clips: selectedClips.map((clip: { start: string; end: string }) => ({
+            start: parseFloat(clip.start),
+            end: parseFloat(clip.end)
+          })),
+          prompt: '',
+          target_language: targetLanguage,
+          aspect_ratio: aspectRatio,
+          subtitles: true,
+          subtitle_customization: {
+            enabled: true,
+            position: 'middle',
+            font_size: 120,
+            font_family: 'Anton',
+            font_color: '#FFFFFF',
+            outline_color: '#000000',
+            outline_width: 2.5,
+            background_color: null,
+            background_opacity: 0.0,
+            shadow_enabled: true,
+            shadow_color: '#808080',
+            shadow_offset: 3.0,
+            max_words_per_line: 3,
+            margin_horizontal: 60,
+            margin_vertical: 180,
+            fade_in_duration: 0,
+            fade_out_duration: 0,
+            karaoke_enabled: true,
+            karaoke_highlight_color: '#0DE050',
+            karaoke_popup_scale: 1.25
+          }
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CLIPS_API_TOKEN}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.statusText}`);
+        }
+
+        const data: ProcessClipsResponse = await response.json();
+        return data;
+      }
+    );
+
+    // Step 2: Save exported clips to database
+    await step.run('save-exported-clips-to-database', async () => {
+      if (
+        processedResponse.processed_clips &&
+        processedResponse.processed_clips.length > 0
+      ) {
+        await prisma.exportedClip.createMany({
+          data: processedResponse.processed_clips.map((clip) => ({
+            videoId,
+            start: clip.start.toString(),
+            end: clip.end.toString(),
+            s3Key: clip.s3_key,
+            aspectRatio,
+            targetLanguage
+          }))
+        });
+      }
+    });
+
+    return {
+      videoId,
+      processedClips: processedResponse.processed_clips.length
     };
   }
 );

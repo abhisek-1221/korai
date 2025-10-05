@@ -12,7 +12,32 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, ArrowLeft, ExternalLink, TrendingUp } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import {
+  Loader2,
+  ArrowLeft,
+  ExternalLink,
+  TrendingUp,
+  Download,
+  Sparkles
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Clip {
@@ -24,6 +49,16 @@ interface Clip {
   viralityScore: string;
   relatedTopics: string[];
   transcript: string;
+  createdAt: string;
+}
+
+interface ExportedClip {
+  id: string;
+  start: string;
+  end: string;
+  s3Key: string;
+  aspectRatio: string;
+  targetLanguage: string | null;
   createdAt: string;
 }
 
@@ -47,6 +82,15 @@ export default function VideoDetailPage() {
   const [video, setVideo] = useState<Video | null>(null);
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedClipsForExport, setSelectedClipsForExport] = useState<
+    Set<string>
+  >(new Set());
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [targetLanguage, setTargetLanguage] = useState<string>('none');
+  const [aspectRatio, setAspectRatio] = useState<string>('9:16');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [exportedClips, setExportedClips] = useState<ExportedClip[]>([]);
+  const [isLoadingExported, setIsLoadingExported] = useState(false);
 
   useEffect(() => {
     fetchVideoDetails();
@@ -133,6 +177,94 @@ export default function VideoDetailPage() {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const toggleClipSelection = (clipId: string) => {
+    const newSelection = new Set(selectedClipsForExport);
+    if (newSelection.has(clipId)) {
+      newSelection.delete(clipId);
+    } else {
+      newSelection.add(clipId);
+    }
+    setSelectedClipsForExport(newSelection);
+  };
+
+  const handleGenerateShorts = () => {
+    if (selectedClipsForExport.size === 0) return;
+    setIsConfigModalOpen(true);
+  };
+
+  const handleExportClips = async () => {
+    if (!video || selectedClipsForExport.size === 0) return;
+
+    setIsProcessing(true);
+    try {
+      const selectedClips = video.clips
+        .filter((clip) => selectedClipsForExport.has(clip.id))
+        .map((clip) => ({
+          start: clip.start,
+          end: clip.end
+        }));
+
+      const response = await fetch('/api/clips/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          videoId: video.id,
+          s3Key: video.s3Key,
+          selectedClips,
+          targetLanguage: targetLanguage === 'none' ? null : targetLanguage,
+          aspectRatio
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to start clip processing');
+      }
+
+      toast({
+        title: 'Success!',
+        description: 'Clip processing started. Check the Exported tab soon.'
+      });
+
+      setIsConfigModalOpen(false);
+      setSelectedClipsForExport(new Set());
+      setTargetLanguage('none');
+      setAspectRatio('9:16');
+    } catch (error) {
+      console.error('Error processing clips:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to start clip processing',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const fetchExportedClips = async () => {
+    if (!params.id) return;
+
+    setIsLoadingExported(true);
+    try {
+      const response = await fetch(`/api/clips/videos/${params.id}/exported`);
+      if (!response.ok) throw new Error('Failed to fetch exported clips');
+
+      const data = await response.json();
+      setExportedClips(data.exportedClips || []);
+    } catch (error) {
+      console.error('Error fetching exported clips:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch exported clips',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoadingExported(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className='flex h-96 items-center justify-center'>
@@ -198,148 +330,334 @@ export default function VideoDetailPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className='grid h-[calc(100vh-240px)] grid-cols-1 gap-6 lg:grid-cols-3'>
-          {/* Clips List */}
-          <div className='flex h-full flex-col lg:col-span-1'>
-            <h2 className='flex-shrink-0 pb-4 text-xl font-semibold'>
-              Identified Clips
-            </h2>
-            <div className='flex-1 space-y-3 overflow-y-auto pr-2'>
-              {video.clips.map((clip) => (
-                <Card
-                  key={clip.id}
-                  className={`cursor-pointer transition-all ${
-                    selectedClip?.id === clip.id
-                      ? 'ring-primary shadow-md ring-2'
-                      : 'hover:shadow-md'
-                  }`}
-                  onClick={() => setSelectedClip(clip)}
-                >
-                  <CardHeader className='p-4 pb-2'>
-                    <div className='flex items-start justify-between gap-2'>
-                      <CardTitle className='line-clamp-2 text-base'>
-                        {clip.title}
-                      </CardTitle>
-                      <Badge variant='secondary' className='flex-shrink-0'>
-                        <TrendingUp className='mr-1 h-3 w-3' />
-                        {clip.viralityScore}
-                      </Badge>
-                    </div>
-                    <CardDescription className='text-xs'>
-                      {formatTime(clip.start)} - {formatTime(clip.end)}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className='p-4 pt-0'>
-                    <p className='text-muted-foreground line-clamp-2 text-sm'>
-                      {clip.summary}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+        <Tabs defaultValue='clips' className='w-full'>
+          <div className='mb-4 flex items-center justify-between'>
+            <TabsList>
+              <TabsTrigger value='clips'>Identified Clips</TabsTrigger>
+              <TabsTrigger value='exported' onClick={fetchExportedClips}>
+                Exported ({exportedClips.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <Button
+              onClick={handleGenerateShorts}
+              disabled={selectedClipsForExport.size === 0}
+              size='sm'
+            >
+              <Sparkles className='mr-2 h-4 w-4' />
+              Generate Shorts ({selectedClipsForExport.size})
+            </Button>
+          </div>
+
+          <TabsContent value='clips'>
+            <div className='grid h-[calc(100vh-300px)] grid-cols-1 gap-6 lg:grid-cols-3'>
+              {/* Clips List */}
+              <div className='flex h-full flex-col lg:col-span-1'>
+                <div className='flex-1 space-y-3 overflow-y-auto pr-2'>
+                  {video.clips.map((clip) => (
+                    <Card
+                      key={clip.id}
+                      className={`transition-all ${
+                        selectedClip?.id === clip.id
+                          ? 'ring-primary shadow-md ring-2'
+                          : 'hover:shadow-md'
+                      }`}
+                    >
+                      <CardHeader className='p-4 pb-2'>
+                        <div className='flex items-start gap-3'>
+                          <Checkbox
+                            checked={selectedClipsForExport.has(clip.id)}
+                            onCheckedChange={() => toggleClipSelection(clip.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div
+                            className='flex-1 cursor-pointer'
+                            onClick={() => setSelectedClip(clip)}
+                          >
+                            <div className='flex items-start justify-between gap-2'>
+                              <CardTitle className='line-clamp-2 text-base'>
+                                {clip.title}
+                              </CardTitle>
+                              <Badge
+                                variant='secondary'
+                                className='flex-shrink-0'
+                              >
+                                <TrendingUp className='mr-1 h-3 w-3' />
+                                {clip.viralityScore}
+                              </Badge>
+                            </div>
+                            <CardDescription className='mt-1 text-xs'>
+                              {formatTime(clip.start)} - {formatTime(clip.end)}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className='p-4 pt-0 pl-14'>
+                        <p className='text-muted-foreground line-clamp-2 text-sm'>
+                          {clip.summary}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* Clip Preview and Details */}
+              <div className='flex h-full flex-col space-y-6 overflow-y-auto pl-2 lg:col-span-2'>
+                {selectedClip && (
+                  <>
+                    {/* Video Preview */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Preview</CardTitle>
+                        <CardDescription>
+                          {formatTime(selectedClip.start)} -{' '}
+                          {formatTime(selectedClip.end)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className='aspect-video w-full'>
+                          {getYouTubeEmbedUrl(
+                            video.youtubeUrl,
+                            selectedClip.start,
+                            selectedClip.end
+                          ) ? (
+                            <iframe
+                              key={selectedClip.id}
+                              src={
+                                getYouTubeEmbedUrl(
+                                  video.youtubeUrl,
+                                  selectedClip.start,
+                                  selectedClip.end
+                                )!
+                              }
+                              className='h-full w-full rounded-lg'
+                              allowFullScreen
+                              title={selectedClip.title}
+                            />
+                          ) : (
+                            <div className='bg-muted flex h-full w-full items-center justify-center rounded-lg'>
+                              <p className='text-muted-foreground'>
+                                Unable to load video
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Clip Details */}
+                    <Card>
+                      <CardHeader>
+                        <div className='flex items-start justify-between'>
+                          <div className='flex-1'>
+                            <CardTitle className='mb-2 text-2xl'>
+                              {selectedClip.title}
+                            </CardTitle>
+                            <CardDescription>
+                              Duration: {formatTime(selectedClip.start)} -{' '}
+                              {formatTime(selectedClip.end)}
+                            </CardDescription>
+                          </div>
+                          <Badge
+                            variant='default'
+                            className='px-3 py-1 text-base'
+                          >
+                            <TrendingUp className='mr-1 h-4 w-4' />
+                            {selectedClip.viralityScore}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className='space-y-6'>
+                        <div>
+                          <h3 className='mb-2 font-semibold'>Summary</h3>
+                          <p className='text-muted-foreground'>
+                            {selectedClip.summary}
+                          </p>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <h3 className='mb-2 font-semibold'>Related Topics</h3>
+                          <div className='flex flex-wrap gap-2'>
+                            {selectedClip.relatedTopics.map((topic, index) => (
+                              <Badge key={index} variant='outline'>
+                                {topic}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <h3 className='mb-2 font-semibold'>Transcript</h3>
+                          <div className='bg-muted rounded-lg p-4'>
+                            <p className='text-sm whitespace-pre-wrap'>
+                              {selectedClip.transcript}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value='exported'>
+            {isLoadingExported ? (
+              <div className='flex h-96 items-center justify-center'>
+                <Loader2 className='h-8 w-8 animate-spin' />
+              </div>
+            ) : exportedClips.length === 0 ? (
+              <Card>
+                <CardContent className='flex flex-col items-center justify-center py-16'>
+                  <Download className='text-muted-foreground mb-4 h-16 w-16' />
+                  <h3 className='mb-2 text-xl font-semibold'>
+                    No exported clips yet
+                  </h3>
+                  <p className='text-muted-foreground'>
+                    Select clips and generate shorts to see them here
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                {exportedClips.map((clip) => (
+                  <Card key={clip.id}>
+                    <CardHeader>
+                      <CardTitle className='text-base'>Exported Clip</CardTitle>
+                      <CardDescription>
+                        {formatTime(clip.start)} - {formatTime(clip.end)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className='space-y-3'>
+                      <div className='flex items-center justify-between text-sm'>
+                        <span className='text-muted-foreground'>
+                          Aspect Ratio:
+                        </span>
+                        <Badge variant='outline'>{clip.aspectRatio}</Badge>
+                      </div>
+                      {clip.targetLanguage && (
+                        <div className='flex items-center justify-between text-sm'>
+                          <span className='text-muted-foreground'>
+                            Language:
+                          </span>
+                          <Badge variant='outline'>{clip.targetLanguage}</Badge>
+                        </div>
+                      )}
+                      <div className='flex items-center justify-between text-sm'>
+                        <span className='text-muted-foreground'>Created:</span>
+                        <span className='text-xs'>
+                          {new Date(clip.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='w-full'
+                        asChild
+                      >
+                        <a
+                          href={`https://your-s3-bucket.s3.amazonaws.com/${clip.s3Key}`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          <Download className='mr-2 h-4 w-4' />
+                          Download
+                        </a>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Config Modal */}
+      <Dialog open={isConfigModalOpen} onOpenChange={setIsConfigModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Configuration</DialogTitle>
+            <DialogDescription>
+              Configure the settings for your exported clips
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='space-y-4 py-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='aspect-ratio'>Aspect Ratio</Label>
+              <Select value={aspectRatio} onValueChange={setAspectRatio}>
+                <SelectTrigger id='aspect-ratio'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='1:1'>1:1 (Square)</SelectItem>
+                  <SelectItem value='16:9'>16:9 (Landscape)</SelectItem>
+                  <SelectItem value='9:16'>9:16 (Portrait/Stories)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='target-language'>
+                Target Language (Optional)
+              </Label>
+              <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                <SelectTrigger id='target-language'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='none'>None (Original)</SelectItem>
+                  <SelectItem value='en'>English</SelectItem>
+                  <SelectItem value='es'>Spanish</SelectItem>
+                  <SelectItem value='fr'>French</SelectItem>
+                  <SelectItem value='de'>German</SelectItem>
+                  <SelectItem value='hi'>Hindi</SelectItem>
+                  <SelectItem value='ja'>Japanese</SelectItem>
+                  <SelectItem value='ko'>Korean</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='bg-muted rounded-lg p-4 text-sm'>
+              <p className='mb-2 font-semibold'>
+                Selected Clips: {selectedClipsForExport.size}
+              </p>
+              <p className='text-muted-foreground'>
+                Subtitles and styling will be applied automatically
+              </p>
             </div>
           </div>
 
-          {/* Clip Preview and Details */}
-          <div className='flex h-full flex-col space-y-6 overflow-y-auto pl-2 lg:col-span-2'>
-            {selectedClip && (
-              <>
-                {/* Video Preview */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Preview</CardTitle>
-                    <CardDescription>
-                      {formatTime(selectedClip.start)} -{' '}
-                      {formatTime(selectedClip.end)}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='aspect-video w-full'>
-                      {getYouTubeEmbedUrl(
-                        video.youtubeUrl,
-                        selectedClip.start,
-                        selectedClip.end
-                      ) ? (
-                        <iframe
-                          key={selectedClip.id}
-                          src={
-                            getYouTubeEmbedUrl(
-                              video.youtubeUrl,
-                              selectedClip.start,
-                              selectedClip.end
-                            )!
-                          }
-                          className='h-full w-full rounded-lg'
-                          allowFullScreen
-                          title={selectedClip.title}
-                        />
-                      ) : (
-                        <div className='bg-muted flex h-full w-full items-center justify-center rounded-lg'>
-                          <p className='text-muted-foreground'>
-                            Unable to load video
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Clip Details */}
-                <Card>
-                  <CardHeader>
-                    <div className='flex items-start justify-between'>
-                      <div className='flex-1'>
-                        <CardTitle className='mb-2 text-2xl'>
-                          {selectedClip.title}
-                        </CardTitle>
-                        <CardDescription>
-                          Duration: {formatTime(selectedClip.start)} -{' '}
-                          {formatTime(selectedClip.end)}
-                        </CardDescription>
-                      </div>
-                      <Badge variant='default' className='px-3 py-1 text-base'>
-                        <TrendingUp className='mr-1 h-4 w-4' />
-                        {selectedClip.viralityScore}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className='space-y-6'>
-                    <div>
-                      <h3 className='mb-2 font-semibold'>Summary</h3>
-                      <p className='text-muted-foreground'>
-                        {selectedClip.summary}
-                      </p>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <h3 className='mb-2 font-semibold'>Related Topics</h3>
-                      <div className='flex flex-wrap gap-2'>
-                        {selectedClip.relatedTopics.map((topic, index) => (
-                          <Badge key={index} variant='outline'>
-                            {topic}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <h3 className='mb-2 font-semibold'>Transcript</h3>
-                      <div className='bg-muted rounded-lg p-4'>
-                        <p className='text-sm whitespace-pre-wrap'>
-                          {selectedClip.transcript}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setIsConfigModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleExportClips} disabled={isProcessing}>
+              {isProcessing ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className='mr-2 h-4 w-4' />
+                  Generate Clips
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
