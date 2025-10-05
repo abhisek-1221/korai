@@ -91,6 +91,11 @@ export default function VideoDetailPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [exportedClips, setExportedClips] = useState<ExportedClip[]>([]);
   const [isLoadingExported, setIsLoadingExported] = useState(false);
+  const [clipVideoUrls, setClipVideoUrls] = useState<Record<string, string>>(
+    {}
+  );
+  const [selectedExportedClip, setSelectedExportedClip] =
+    useState<ExportedClip | null>(null);
 
   useEffect(() => {
     fetchVideoDetails();
@@ -101,6 +106,13 @@ export default function VideoDetailPage() {
       setSelectedClip(video.clips[0]);
     }
   }, [video]);
+
+  useEffect(() => {
+    // Auto-load video URL when an exported clip is selected
+    if (selectedExportedClip && !clipVideoUrls[selectedExportedClip.id]) {
+      getSignedUrl(selectedExportedClip.s3Key, selectedExportedClip.id);
+    }
+  }, [selectedExportedClip]);
 
   const fetchVideoDetails = async () => {
     try {
@@ -253,6 +265,11 @@ export default function VideoDetailPage() {
 
       const data = await response.json();
       setExportedClips(data.exportedClips || []);
+
+      // Select the first clip by default if available
+      if (data.exportedClips && data.exportedClips.length > 0) {
+        setSelectedExportedClip(data.exportedClips[0]);
+      }
     } catch (error) {
       console.error('Error fetching exported clips:', error);
       toast({
@@ -262,6 +279,50 @@ export default function VideoDetailPage() {
       });
     } finally {
       setIsLoadingExported(false);
+    }
+  };
+
+  const getSignedUrl = async (s3Key: string, clipId: string) => {
+    try {
+      // Check if we already have a URL for this clip
+      if (clipVideoUrls[clipId]) {
+        return clipVideoUrls[clipId];
+      }
+
+      const response = await fetch(`/api/clips/videos/${params.id}/download`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ s3Key })
+      });
+
+      if (!response.ok) throw new Error('Failed to get signed URL');
+
+      const data = await response.json();
+
+      // Cache the URL
+      setClipVideoUrls((prev) => ({
+        ...prev,
+        [clipId]: data.url
+      }));
+
+      return data.url;
+    } catch (error) {
+      console.error('Error getting signed URL:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate download URL',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  };
+
+  const handleDownloadClip = async (clip: ExportedClip) => {
+    const url = await getSignedUrl(clip.s3Key, clip.id);
+    if (url) {
+      window.open(url, '_blank');
     }
   };
 
@@ -525,54 +586,217 @@ export default function VideoDetailPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                {exportedClips.map((clip) => (
-                  <Card key={clip.id}>
-                    <CardHeader>
-                      <CardTitle className='text-base'>Exported Clip</CardTitle>
-                      <CardDescription>
-                        {formatTime(clip.start)} - {formatTime(clip.end)}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className='space-y-3'>
-                      <div className='flex items-center justify-between text-sm'>
-                        <span className='text-muted-foreground'>
-                          Aspect Ratio:
-                        </span>
-                        <Badge variant='outline'>{clip.aspectRatio}</Badge>
-                      </div>
-                      {clip.targetLanguage && (
-                        <div className='flex items-center justify-between text-sm'>
-                          <span className='text-muted-foreground'>
-                            Language:
-                          </span>
-                          <Badge variant='outline'>{clip.targetLanguage}</Badge>
+              <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
+                {/* Exported Clips List */}
+                <div
+                  className='space-y-4 overflow-y-auto pr-2'
+                  style={{ maxHeight: '600px' }}
+                >
+                  {exportedClips.map((clip) => (
+                    <Card
+                      key={clip.id}
+                      className={`cursor-pointer transition-colors ${
+                        selectedExportedClip?.id === clip.id
+                          ? 'border-primary ring-primary ring-1'
+                          : 'hover:border-muted-foreground/50'
+                      }`}
+                      onClick={() => setSelectedExportedClip(clip)}
+                    >
+                      <CardHeader className='pb-3'>
+                        <div className='flex items-start justify-between'>
+                          <div>
+                            <CardTitle className='text-base'>
+                              Exported Clip
+                            </CardTitle>
+                            <CardDescription className='mt-1 text-xs'>
+                              {formatTime(clip.start)} - {formatTime(clip.end)}
+                            </CardDescription>
+                          </div>
+                          <Badge variant='secondary' className='text-xs'>
+                            {clip.aspectRatio}
+                          </Badge>
                         </div>
-                      )}
-                      <div className='flex items-center justify-between text-sm'>
-                        <span className='text-muted-foreground'>Created:</span>
-                        <span className='text-xs'>
-                          {new Date(clip.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        className='w-full'
-                        asChild
-                      >
-                        <a
-                          href={`https://your-s3-bucket.s3.amazonaws.com/${clip.s3Key}`}
-                          target='_blank'
-                          rel='noopener noreferrer'
+                      </CardHeader>
+                      <CardContent className='space-y-2 pt-0'>
+                        {clip.targetLanguage && (
+                          <div className='flex items-center justify-between text-xs'>
+                            <span className='text-muted-foreground'>
+                              Language:
+                            </span>
+                            <Badge variant='outline' className='text-xs'>
+                              {clip.targetLanguage}
+                            </Badge>
+                          </div>
+                        )}
+                        <div className='flex items-center justify-between text-xs'>
+                          <span className='text-muted-foreground'>
+                            Created:
+                          </span>
+                          <span className='text-muted-foreground'>
+                            {new Date(clip.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='mt-2 w-full'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadClip(clip);
+                          }}
                         >
-                          <Download className='mr-2 h-4 w-4' />
+                          <Download className='mr-2 h-3 w-3' />
                           Download
-                        </a>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Video Player and Details */}
+                <div className='flex flex-col space-y-4 lg:col-span-2'>
+                  {selectedExportedClip && (
+                    <>
+                      {/* Video Player */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Preview</CardTitle>
+                          <CardDescription>
+                            {formatTime(selectedExportedClip.start)} -{' '}
+                            {formatTime(selectedExportedClip.end)}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div
+                            className='relative mx-auto w-full overflow-hidden rounded-lg bg-black'
+                            style={{
+                              maxWidth:
+                                selectedExportedClip.aspectRatio === '9:16'
+                                  ? '360px'
+                                  : selectedExportedClip.aspectRatio === '1:1'
+                                    ? '500px'
+                                    : '100%',
+                              aspectRatio:
+                                selectedExportedClip.aspectRatio === '9:16'
+                                  ? '9/16'
+                                  : selectedExportedClip.aspectRatio === '1:1'
+                                    ? '1/1'
+                                    : '16/9'
+                            }}
+                          >
+                            {clipVideoUrls[selectedExportedClip.id] ? (
+                              <video
+                                key={selectedExportedClip.id}
+                                src={clipVideoUrls[selectedExportedClip.id]}
+                                controls
+                                className='h-full w-full'
+                                autoPlay
+                              >
+                                Your browser does not support the video tag.
+                              </video>
+                            ) : (
+                              <div className='flex h-full w-full items-center justify-center'>
+                                <Button
+                                  onClick={() =>
+                                    getSignedUrl(
+                                      selectedExportedClip.s3Key,
+                                      selectedExportedClip.id
+                                    )
+                                  }
+                                >
+                                  Load Video
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Clip Details */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Clip Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className='space-y-4'>
+                          <div className='grid grid-cols-2 gap-4'>
+                            <div>
+                              <p className='text-muted-foreground mb-1 text-sm'>
+                                Duration
+                              </p>
+                              <p className='font-medium'>
+                                {formatTime(selectedExportedClip.start)} -{' '}
+                                {formatTime(selectedExportedClip.end)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className='text-muted-foreground mb-1 text-sm'>
+                                Aspect Ratio
+                              </p>
+                              <Badge>{selectedExportedClip.aspectRatio}</Badge>
+                            </div>
+                            {selectedExportedClip.targetLanguage && (
+                              <div>
+                                <p className='text-muted-foreground mb-1 text-sm'>
+                                  Target Language
+                                </p>
+                                <Badge variant='outline'>
+                                  {selectedExportedClip.targetLanguage}
+                                </Badge>
+                              </div>
+                            )}
+                            <div>
+                              <p className='text-muted-foreground mb-1 text-sm'>
+                                Created At
+                              </p>
+                              <p className='text-sm'>
+                                {new Date(
+                                  selectedExportedClip.createdAt
+                                ).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          <div>
+                            <p className='text-muted-foreground mb-2 text-sm'>
+                              S3 Key
+                            </p>
+                            <code className='bg-muted block rounded-md p-2 text-xs'>
+                              {selectedExportedClip.s3Key}
+                            </code>
+                          </div>
+
+                          <div className='flex gap-2'>
+                            <Button
+                              className='flex-1'
+                              onClick={() =>
+                                handleDownloadClip(selectedExportedClip)
+                              }
+                            >
+                              <Download className='mr-2 h-4 w-4' />
+                              Download Clip
+                            </Button>
+                            <Button
+                              variant='outline'
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  selectedExportedClip.s3Key
+                                );
+                                toast({
+                                  title: 'Copied!',
+                                  description: 'S3 key copied to clipboard'
+                                });
+                              }}
+                            >
+                              Copy S3 Key
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </TabsContent>
