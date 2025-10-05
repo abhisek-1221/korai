@@ -31,7 +31,7 @@ export const identifyClips = inngest.createFunction(
     // Step 1: Generate UUID and create initial video record
     const videoData = await step.run('create-video-record', async () => {
       const videoUuid = uuidv4();
-      const s3Key = `youtube-videos/${videoUuid}`;
+      const s3Key = `youtube-videos/${videoUuid}/yt`;
 
       const video = await prisma.video.create({
         data: {

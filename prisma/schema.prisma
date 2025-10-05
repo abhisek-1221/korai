@@ -14,7 +14,7 @@ model Video {
   id        String   @id @default(cuid())
   userId    String   // Clerk user ID
   youtubeUrl String
-  s3Key     String   // youtube-videos/{uuid}
+  s3Key     String   // youtube-videos/{uuid}/yt
   prompt    String?
   
   // Response fields
