@@ -1,0 +1,23 @@
+# Ignore Python server folder (deployed separately)
+py-server/
+
+# Ignore development and testing files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
+coverage/
+
+# Ignore documentation
+*.md
+!README.md
+
+# Ignore configuration files
+.vscode/
+.idea/
+.cursorrules
+memory-bank/
+
+# Ignore Husky hooks (not needed in production)
+.husky/
