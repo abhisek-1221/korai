@@ -14,7 +14,7 @@ model Video {
   id        String   @id @default(cuid())
   userId    String   // Clerk user ID
   youtubeUrl String
-  s3Key     String   // youtube-videos/{uuid}
+  s3Key     String   // youtube-videos/{uuid}/yt
   prompt    String?
   
   // Response fields
@@ -23,7 +23,8 @@ model Video {
   detectedLanguage String?
   s3Path           String?
   
-  clips     Clip[]
+  clips          Clip[]
+  exportedClips  ExportedClip[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -50,4 +51,21 @@ model Clip {
   
   @@index([videoId])
   @@index([viralityScore])
+}
+
+model ExportedClip {
+  id             String   @id @default(cuid())
+  videoId        String
+  video          Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  start          String   // Original clip start time
+  end            String   // Original clip end time
+  s3Key          String   // S3 path to the exported video clip
+  aspectRatio    String   // 1:1, 16:9, 9:16
+  targetLanguage String?  // Target language for translation (null if none)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([videoId])
 }

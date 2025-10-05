@@ -19,7 +19,7 @@ export const navItems: NavItem[] = [
     icon: 'dashboard',
     isActive: false,
     shortcut: ['d', 'd'],
-    items: [] // Empty array as there are no child items for Dashboard
+    items: []
   },
   {
     title: 'Youtube',
@@ -56,20 +56,24 @@ export const navItems: NavItem[] = [
         url: '/dashboard/voice-chat',
         icon: 'mic',
         shortcut: ['v', 'v']
-      },
-      {
-        title: 'Viral Shorts',
-        url: '/dashboard/clips',
-        icon: 'video',
-        shortcut: ['s', 's']
-      },
-      {
-        title: 'Spaces',
-        url: '/dashboard/clips/videos',
-        icon: 'folder',
-        shortcut: ['s', 'p']
       }
     ]
+  },
+  {
+    title: 'Generate Shorts',
+    url: '/dashboard/clips',
+    icon: 'video',
+    isActive: false,
+    shortcut: ['s', 's'],
+    items: []
+  },
+  {
+    title: 'My Spaces',
+    url: '/dashboard/clips/videos',
+    icon: 'folder',
+    isActive: false,
+    shortcut: ['s', 'p'],
+    items: []
   }
 ];
 

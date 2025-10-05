@@ -5,6 +5,7 @@ import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { IconStar } from '@tabler/icons-react';
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { GrainGradient } from '@paper-design/shaders-react';
 
 export const metadata: Metadata = {
   title: 'Authentication',
@@ -24,7 +25,22 @@ export default function SignUpViewPage() {
         Sign Up
       </Link>
       <div className='bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r'>
-        <div className='absolute inset-0 bg-zinc-900' />
+        <div className='absolute inset-0 overflow-hidden'>
+          <div className='h-full w-full'>
+            <GrainGradient
+              width={1920}
+              height={1080}
+              colors={['#b0b0b0', '#1f1e1e', '#000000', '#222225']}
+              colorBack='#000000'
+              softness={0.27}
+              intensity={0.5}
+              noise={0.25}
+              shape='corners'
+              speed={2}
+              style={{ width: '100%', height: '100%' }}
+            />
+          </div>
+        </div>
         <div className='relative z-20 flex items-center text-lg font-medium'>
           <svg
             xmlns='http://www.w3.org/2000/svg'
@@ -38,16 +54,13 @@ export default function SignUpViewPage() {
           >
             <path d='M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3' />
           </svg>
-          Logo
+          Korai
         </div>
         <div className='relative z-20 mt-auto'>
           <blockquote className='space-y-2'>
-            <p className='text-lg'>
-              &ldquo;This starter template has saved me countless hours of work
-              and helped me deliver projects to my clients faster than ever
-              before.&rdquo;
+            <p className='text-lg italic'>
+              Create, clip, and command — all in one place
             </p>
-            <footer className='text-sm'>Random Dude</footer>
           </blockquote>
         </div>
       </div>

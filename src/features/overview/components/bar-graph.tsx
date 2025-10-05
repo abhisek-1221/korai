@@ -115,18 +115,14 @@ const chartData = [
 
 const chartConfig = {
   views: {
-    label: 'Page Views'
+    label: 'Token Usage'
   },
   desktop: {
-    label: 'Desktop',
+    label: 'Input Tokens',
     color: 'var(--primary)'
   },
   mobile: {
-    label: 'Mobile',
-    color: 'var(--primary)'
-  },
-  error: {
-    label: 'Error',
+    label: 'Output Tokens',
     color: 'var(--primary)'
   }
 } satisfies ChartConfig;
@@ -149,12 +145,6 @@ export function BarGraph() {
     setIsClient(true);
   }, []);
 
-  React.useEffect(() => {
-    if (activeChart === 'error') {
-      throw new Error('Mocking Error');
-    }
-  }, [activeChart]);
-
   if (!isClient) {
     return null;
   }
@@ -163,16 +153,16 @@ export function BarGraph() {
     <Card className='@container/card !pt-3'>
       <CardHeader className='flex flex-col items-stretch space-y-0 border-b !p-0 sm:flex-row'>
         <div className='flex flex-1 flex-col justify-center gap-1 px-6 !py-0'>
-          <CardTitle>Bar Chart - Interactive</CardTitle>
+          <CardTitle>Token Usage</CardTitle>
           <CardDescription>
             <span className='hidden @[540px]/card:block'>
-              Total for the last 3 months
+              Total tokens consumed in the last 3 months
             </span>
             <span className='@[540px]/card:hidden'>Last 3 months</span>
           </CardDescription>
         </div>
         <div className='flex'>
-          {['desktop', 'mobile', 'error'].map((key) => {
+          {['desktop', 'mobile'].map((key) => {
             const chart = key as keyof typeof chartConfig;
             if (!chart || total[key as keyof typeof total] === 0) return null;
             return (
