@@ -60,7 +60,18 @@ import { Loader } from '@/components/ai-elements/loader';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
 import { useVideoChatStore } from '../store/video-chat-store';
 import { useVideoTranscript } from '../hooks/use-video-transcript';
+import { useGenerateVideoThreads } from '../hooks/use-generate-video-threads';
 import PageContainer from '@/components/layout/page-container';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import ThreadPost from '@/components/threads/ThreadPost';
+import ThreadSkeleton from '@/components/threads/ThreadSkeleton';
+import { Copy } from 'lucide-react';
 
 const suggestionGroups = [
   {
@@ -111,13 +122,36 @@ export default function VideoChatPage() {
     transcript,
     hasTranscript,
     isLoadingTranscript,
+    threads,
+    generatingThreads,
+    threadsModalOpen,
     setVideoUrl,
+    setThreadsModalOpen,
     resetChat
   } = useVideoChatStore();
 
   const { fetchTranscript } = useVideoTranscript();
+  const { generateThreads } = useGenerateVideoThreads();
 
   const { messages, sendMessage, status } = useChat();
+
+  const copyThreadsToClipboard = () => {
+    const threadsText = threads
+      .map((thread) => `${thread.post}. ${thread.content}`)
+      .join('\n\n');
+    navigator.clipboard.writeText(threadsText);
+    const { toast } = require('@/hooks/use-toast');
+    toast({
+      title: 'Copied!',
+      description: 'Thread copied to clipboard'
+    });
+  };
+
+  const shareToTwitter = () => {
+    const threadsText = threads.map((thread) => thread.content).join('\n\n');
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(threadsText)}`;
+    window.open(twitterUrl, '_blank');
+  };
 
   const handleVideoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -392,6 +426,23 @@ Answer questions based on this transcript. Be conversational, helpful, and accur
                     <span>New Video</span>
                   </PromptInputButton>
                   <PromptInputButton
+                    variant='ghost'
+                    onClick={generateThreads}
+                    disabled={generatingThreads}
+                    className='text-xs'
+                  >
+                    <svg
+                      xmlns='http://www.w3.org/2000/svg'
+                      width='14'
+                      height='14'
+                      fill='currentColor'
+                      viewBox='0 0 1200 1227'
+                    >
+                      <path d='M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z' />
+                    </svg>
+                    <span>Thread</span>
+                  </PromptInputButton>
+                  <PromptInputButton
                     variant={webSearch ? 'default' : 'ghost'}
                     onClick={() => setWebSearch(!webSearch)}
                   >
@@ -428,6 +479,85 @@ Answer questions based on this transcript. Be conversational, helpful, and accur
           </div>
         </div>
       </div>
+
+      {/* Threads Modal */}
+      <Dialog open={threadsModalOpen} onOpenChange={setThreadsModalOpen}>
+        <DialogContent className='max-h-[90vh] w-[95vw] max-w-2xl sm:w-full'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center space-x-3'>
+              <div className='bg-primary/20 flex h-8 w-8 items-center justify-center rounded-lg'>
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='16'
+                  height='16'
+                  fill='currentColor'
+                  viewBox='0 0 1200 1227'
+                >
+                  <path d='M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z' />
+                </svg>
+              </div>
+              <div>
+                <span className='text-xl font-semibold'>
+                  {generatingThreads
+                    ? 'Generating X Thread...'
+                    : 'Your Viral X Thread'}
+                </span>
+                {threads.length > 0 && !generatingThreads && (
+                  <p className='text-muted-foreground text-sm font-normal'>
+                    {threads.length} posts ready to share
+                  </p>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className='flex-1 overflow-hidden'>
+            <ScrollArea className='h-[60vh] pr-4'>
+              <div className='space-y-4'>
+                {generatingThreads && <ThreadSkeleton count={5} />}
+
+                {threads.length > 0 && !generatingThreads && (
+                  <div className='space-y-4'>
+                    {threads.map((thread, index) => (
+                      <ThreadPost
+                        key={index}
+                        post={thread.post}
+                        total={thread.total}
+                        content={thread.content}
+                        index={index}
+                        isConnected={thread.post < thread.total}
+                        thumbnail={thread.thumbnail}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {threads.length > 0 && !generatingThreads && (
+            <div className='flex justify-end space-x-3 border-t pt-4'>
+              <Button variant='outline' onClick={copyThreadsToClipboard}>
+                <Copy className='mr-2 h-4 w-4' />
+                Copy All
+              </Button>
+              <Button onClick={shareToTwitter}>
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='16'
+                  height='16'
+                  fill='currentColor'
+                  viewBox='0 0 1200 1227'
+                  className='mr-2'
+                >
+                  <path d='M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z' />
+                </svg>
+                Share on X
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

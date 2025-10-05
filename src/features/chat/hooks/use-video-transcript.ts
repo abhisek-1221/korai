@@ -5,8 +5,13 @@ import { extractVideoId } from '@/lib/ythelper';
 
 export const useVideoTranscript = () => {
   const { toast } = useToast();
-  const { videoUrl, setTranscript, setHasTranscript, setIsLoadingTranscript } =
-    useVideoChatStore();
+  const {
+    videoUrl,
+    setVideoId,
+    setTranscript,
+    setHasTranscript,
+    setIsLoadingTranscript
+  } = useVideoChatStore();
 
   const fetchTranscript = useCallback(async () => {
     if (!videoUrl.trim()) {
@@ -29,6 +34,7 @@ export const useVideoTranscript = () => {
     }
 
     setIsLoadingTranscript(true);
+    setVideoId(extractedVideoId);
 
     try {
       const response = await fetch('/api/transcribe', {
@@ -71,6 +77,7 @@ export const useVideoTranscript = () => {
   }, [
     videoUrl,
     toast,
+    setVideoId,
     setTranscript,
     setHasTranscript,
     setIsLoadingTranscript

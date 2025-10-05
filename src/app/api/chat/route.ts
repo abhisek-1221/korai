@@ -153,7 +153,7 @@ export async function POST(req: Request) {
       webSearch,
       system
     }: {
-      messages: UIMessage[];
+      messages: UIMessage[] | any[];
       model: string;
       webSearch: boolean;
       system?: string;
@@ -161,9 +161,19 @@ export async function POST(req: Request) {
 
     const selectedModel = getModel(DEFAULT_MODEL);
 
+    // Check if messages is UIMessage format or simple format
+    let processedMessages;
+    if (messages && messages.length > 0 && 'parts' in messages[0]) {
+      // UIMessage format from useChat
+      processedMessages = convertToModelMessages(messages as UIMessage[]);
+    } else {
+      // Simple format from thread generation or other sources
+      processedMessages = messages;
+    }
+
     const result = streamText({
       model: webSearch ? 'perplexity/sonar' : (selectedModel as any),
-      messages: convertToModelMessages(messages),
+      messages: processedMessages,
       system:
         system ||
         'You are a helpful assistant that can answer questions and help with tasks',
