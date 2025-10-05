@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -13,9 +13,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const video = await prisma.video.findFirst({
       where: {
-        id: params.id,
+        id,
         userId
       },
       include: {
@@ -43,7 +45,7 @@ export async function GET(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -52,10 +54,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     // Verify the video belongs to the user
     const video = await prisma.video.findFirst({
       where: {
-        id: params.id,
+        id,
         userId
       }
     });
@@ -67,7 +71,7 @@ export async function DELETE(
     // Delete the video (clips will be cascade deleted due to onDelete: Cascade in schema)
     await prisma.video.delete({
       where: {
-        id: params.id
+        id
       }
     });
 
