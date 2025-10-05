@@ -64,6 +64,18 @@ export const navItems: NavItem[] = [
         url: '/dashboard/voice-chat',
         icon: 'mic',
         shortcut: ['v', 'v']
+      },
+      {
+        title: 'Viral Shorts',
+        url: '/dashboard/clips',
+        icon: 'video',
+        shortcut: ['s', 's']
+      },
+      {
+        title: 'Spaces',
+        url: '/dashboard/clips/videos',
+        icon: 'folder',
+        shortcut: ['s', 'p']
       }
     ]
   },
