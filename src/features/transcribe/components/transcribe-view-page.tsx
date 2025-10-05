@@ -25,6 +25,8 @@ import { useTranscribeStore } from '../store/transcribe-store';
 import { useFetchTranscript } from '../hooks/use-fetch-transcript';
 import { useYoutubePlayer } from '../hooks/use-youtube-player';
 import { useTranscriptDownload } from '../hooks/use-transcript-download';
+import { validateYoutubeVideoUrl } from '@/lib/youtube-validator';
+import { toast } from 'sonner';
 
 export default function TranscribeViewPage() {
   const {
@@ -71,9 +73,26 @@ export default function TranscribeViewPage() {
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
+
+      // Check if URL is empty
+      if (!videoUrl || !videoUrl.trim()) {
+        toast.error('Please enter a YouTube video URL');
+        return;
+      }
+
+      // Validate YouTube URL
+      const validation = validateYoutubeVideoUrl(videoUrl);
+
+      if (!validation.isValid) {
+        toast.error(
+          validation.error || 'Please enter a valid YouTube video URL'
+        );
+        return;
+      }
+
       fetchTranscript();
     },
-    [fetchTranscript]
+    [fetchTranscript, videoUrl]
   );
 
   const handleTimestampClick = useCallback(
