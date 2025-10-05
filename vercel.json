@@ -1,0 +1,7 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "installCommand": "bun install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./py-server/"
+}

@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Video {
+  id        String   @id @default(cuid())
+  userId    String   // Clerk user ID
+  youtubeUrl String
+  s3Key     String   // youtube-videos/{uuid}
+  prompt    String?
+  
+  // Response fields
+  totalClips       Int?
+  videoDuration    String?
+  detectedLanguage String?
+  s3Path           String?
+  
+  clips     Clip[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([s3Key])
+}
+
+model Clip {
+  id             String   @id @default(cuid())
+  videoId        String
+  video          Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  start          String
+  end            String
+  title          String
+  summary        String   @db.Text
+  viralityScore  String
+  relatedTopics  String[] // Array of topics
+  transcript     String   @db.Text
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([videoId])
+  @@index([viralityScore])
+}

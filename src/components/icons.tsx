@@ -32,7 +32,9 @@ import {
   IconLayoutKanban,
   IconBrandGithub,
   IconMessageCircle,
-  IconMicrophone
+  IconMicrophone,
+  IconVideo,
+  IconFolderOpen
 } from '@tabler/icons-react';
 import { Youtube, YoutubeIcon } from 'lucide-react';
 
@@ -72,5 +74,7 @@ export const Icons = {
   check: IconCheck,
   chat: IconMessageCircle,
   mic: IconMicrophone,
-  youtube: YoutubeIcon
+  youtube: YoutubeIcon,
+  video: IconVideo,
+  folder: IconFolderOpen
 };

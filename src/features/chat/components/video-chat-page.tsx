@@ -71,7 +71,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ThreadPost from '@/components/threads/ThreadPost';
 import ThreadSkeleton from '@/components/threads/ThreadSkeleton';
-import { Copy } from 'lucide-react';
+import { Copy, Plug2, Check } from 'lucide-react';
 
 const suggestionGroups = [
   {
@@ -116,6 +116,9 @@ export default function VideoChatPage() {
   const [input, setInput] = useState('');
   const [model, setModel] = useState<string>(models[0].value);
   const [webSearch, setWebSearch] = useState(false);
+  const [connectAppsModalOpen, setConnectAppsModalOpen] = useState(false);
+  const [mcpUrl, setMcpUrl] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
 
   const {
     videoUrl,
@@ -151,6 +154,19 @@ export default function VideoChatPage() {
     const threadsText = threads.map((thread) => thread.content).join('\n\n');
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(threadsText)}`;
     window.open(twitterUrl, '_blank');
+  };
+
+  const handleConnectApp = () => {
+    // Mock connection - just toggle the state
+    setIsConnected(true);
+    setTimeout(() => {
+      setConnectAppsModalOpen(false);
+      const { toast } = require('@/hooks/use-toast');
+      toast({
+        title: 'Connected!',
+        description: 'MCP app connected successfully'
+      });
+    }, 500);
   };
 
   const handleVideoSubmit = async (e: React.FormEvent) => {
@@ -427,6 +443,14 @@ Answer questions based on this transcript. Be conversational, helpful, and accur
                   </PromptInputButton>
                   <PromptInputButton
                     variant='ghost'
+                    onClick={() => setConnectAppsModalOpen(true)}
+                    className='text-xs'
+                  >
+                    <Plug2 size={16} />
+                    <span>Connect Apps</span>
+                  </PromptInputButton>
+                  <PromptInputButton
+                    variant='ghost'
                     onClick={generateThreads}
                     disabled={generatingThreads}
                     className='text-xs'
@@ -556,6 +580,69 @@ Answer questions based on this transcript. Be conversational, helpful, and accur
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Connect Apps Modal */}
+      <Dialog
+        open={connectAppsModalOpen}
+        onOpenChange={(open) => {
+          setConnectAppsModalOpen(open);
+          if (!open) {
+            setIsConnected(false);
+            setMcpUrl('');
+          }
+        }}
+      >
+        <DialogContent className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2'>
+              <Plug2 className='h-5 w-5' />
+              Connect Apps
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className='space-y-4 py-4'>
+            <div className='space-y-2'>
+              <label htmlFor='mcp-url' className='text-sm font-medium'>
+                MCP HTTP Streamable URL
+              </label>
+              <Input
+                id='mcp-url'
+                type='url'
+                value={mcpUrl}
+                onChange={(e) => setMcpUrl(e.target.value)}
+                placeholder='https://example.com/mcp/stream'
+                disabled={isConnected}
+              />
+            </div>
+
+            <Button
+              onClick={handleConnectApp}
+              disabled={!mcpUrl.trim() || isConnected}
+              className='w-full'
+              variant={isConnected ? 'default' : 'default'}
+            >
+              {isConnected ? (
+                <>
+                  <Check className='mr-2 h-4 w-4' />
+                  Connected
+                </>
+              ) : (
+                <>
+                  <Plug2 className='mr-2 h-4 w-4' />
+                  Connect
+                </>
+              )}
+            </Button>
+
+            {isConnected && (
+              <p className='flex items-center gap-2 text-sm text-green-600'>
+                <Check className='h-4 w-4' />
+                Successfully connected to MCP service
+              </p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </PageContainer>
