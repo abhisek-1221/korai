@@ -3,5 +3,5 @@
   "installCommand": "bun install",
   "framework": "nextjs",
   "regions": ["iad1"],
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./py-server/"
+  "ignoreCommand": "bash -c '[[ ! $(git diff --stat HEAD^ HEAD -- . \":(exclude)py-server\") ]]'"
 }
