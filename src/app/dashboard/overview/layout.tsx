@@ -13,14 +13,10 @@ import React from 'react';
 
 export default function OverViewLayout({
   sales,
-  pie_stats,
-  bar_stats,
-  area_stats
+  bar_stats
 }: {
   sales: React.ReactNode;
-  pie_stats: React.ReactNode;
   bar_stats: React.ReactNode;
-  area_stats: React.ReactNode;
 }) {
   return (
     <PageContainer>
@@ -100,35 +96,33 @@ export default function OverViewLayout({
           </Card>
           <Card className='@container/card'>
             <CardHeader>
-              <CardDescription>Avg Viral Score</CardDescription>
+              <CardDescription>Credits Used</CardDescription>
               <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                8.4/10
+                8,450
               </CardTitle>
               <CardAction>
                 <Badge variant='outline'>
                   <IconTrendingUp />
-                  +0.7
+                  +12%
                 </Badge>
               </CardAction>
             </CardHeader>
             <CardFooter className='flex-col items-start gap-1.5 text-sm'>
               <div className='line-clamp-1 flex gap-2 font-medium'>
-                High quality content <IconTrendingUp className='size-4' />
+                API usage this month <IconTrendingUp className='size-4' />
               </div>
               <div className='text-muted-foreground'>
-                AI virality predictions
+                Total credits consumed
               </div>
             </CardFooter>
           </Card>
         </div>
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7'>
-          <div className='col-span-4'>{bar_stats}</div>
-          <div className='col-span-4 md:col-span-3'>
-            {/* sales arallel routes */}
+        <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
+          <div className='col-span-1'>{bar_stats}</div>
+          <div className='col-span-1'>
+            {/* sales parallel routes */}
             {sales}
           </div>
-          <div className='col-span-4'>{area_stats}</div>
-          <div className='col-span-4 md:col-span-3'>{pie_stats}</div>
         </div>
       </div>
     </PageContainer>
