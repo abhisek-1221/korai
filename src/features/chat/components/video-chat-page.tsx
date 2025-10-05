@@ -103,12 +103,12 @@ const suggestionGroups = [
 
 const models = [
   {
-    name: 'GPT 4o',
-    value: 'openai/gpt-4o'
+    name: 'Llama 3.1 70B',
+    value: 'meta-llama/llama-3.1-70b-instruct'
   },
   {
-    name: 'Deepseek R1',
-    value: 'deepseek/deepseek-r1'
+    name: 'Llama 4 Maverick',
+    value: 'meta-llama/llama-4-maverick-instruct'
   }
 ];
 
