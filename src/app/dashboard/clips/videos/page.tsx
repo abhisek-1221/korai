@@ -132,7 +132,9 @@ export default function VideosPage() {
       <div className='container mx-auto px-4 py-10'>
         <div className='mb-8 flex items-center justify-between'>
           <div>
-            <h1 className='text-4xl font-bold tracking-tight'>Your Videos</h1>
+            <h1 className='text-4xl font-bold tracking-tight'>
+              Your Video Space
+            </h1>
             <p className='text-muted-foreground mt-2'>
               View all your processed videos and their clips
             </p>

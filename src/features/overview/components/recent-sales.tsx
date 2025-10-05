@@ -1,4 +1,3 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Card,
   CardHeader,
@@ -6,42 +5,44 @@ import {
   CardTitle,
   CardDescription
 } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Video, Sparkles } from 'lucide-react';
 
-const salesData = [
+const recentClipsData = [
   {
-    name: 'Olivia Martin',
-    email: 'olivia.martin@email.com',
-    avatar: 'https://api.slingacademy.com/public/sample-users/1.png',
-    fallback: 'OM',
-    amount: '+$1,999.00'
+    title: 'How AI Will Change Everything',
+    duration: '2:45',
+    viralScore: '9.2',
+    clips: 8,
+    status: 'processed'
   },
   {
-    name: 'Jackson Lee',
-    email: 'jackson.lee@email.com',
-    avatar: 'https://api.slingacademy.com/public/sample-users/2.png',
-    fallback: 'JL',
-    amount: '+$39.00'
+    title: 'The Future of Web Development',
+    duration: '3:12',
+    viralScore: '8.7',
+    clips: 12,
+    status: 'processing'
   },
   {
-    name: 'Isabella Nguyen',
-    email: 'isabella.nguyen@email.com',
-    avatar: 'https://api.slingacademy.com/public/sample-users/3.png',
-    fallback: 'IN',
-    amount: '+$299.00'
+    title: 'Startup Growth Strategies',
+    duration: '1:58',
+    viralScore: '9.5',
+    clips: 6,
+    status: 'processed'
   },
   {
-    name: 'William Kim',
-    email: 'will@email.com',
-    avatar: 'https://api.slingacademy.com/public/sample-users/4.png',
-    fallback: 'WK',
-    amount: '+$99.00'
+    title: 'Productivity Hacks for 2025',
+    duration: '4:23',
+    viralScore: '8.1',
+    clips: 15,
+    status: 'processed'
   },
   {
-    name: 'Sofia Davis',
-    email: 'sofia.davis@email.com',
-    avatar: 'https://api.slingacademy.com/public/sample-users/5.png',
-    fallback: 'SD',
-    amount: '+$39.00'
+    title: 'Building Viral Content',
+    duration: '2:34',
+    viralScore: '9.8',
+    clips: 9,
+    status: 'processed'
   }
 ];
 
@@ -49,22 +50,43 @@ export function RecentSales() {
   return (
     <Card className='h-full'>
       <CardHeader>
-        <CardTitle>Recent Sales</CardTitle>
-        <CardDescription>You made 265 sales this month.</CardDescription>
+        <CardTitle>Recent Videos</CardTitle>
+        <CardDescription>
+          Your latest analyzed videos with viral clips.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className='space-y-8'>
-          {salesData.map((sale, index) => (
-            <div key={index} className='flex items-center'>
-              <Avatar className='h-9 w-9'>
-                <AvatarImage src={sale.avatar} alt='Avatar' />
-                <AvatarFallback>{sale.fallback}</AvatarFallback>
-              </Avatar>
-              <div className='ml-4 space-y-1'>
-                <p className='text-sm leading-none font-medium'>{sale.name}</p>
-                <p className='text-muted-foreground text-sm'>{sale.email}</p>
+        <div className='space-y-6'>
+          {recentClipsData.map((video, index) => (
+            <div key={index} className='flex items-center gap-4'>
+              <div className='bg-primary/10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg'>
+                <Video className='text-primary h-5 w-5' />
               </div>
-              <div className='ml-auto font-medium'>{sale.amount}</div>
+              <div className='flex-1 space-y-1'>
+                <p className='line-clamp-1 text-sm leading-none font-medium'>
+                  {video.title}
+                </p>
+                <div className='text-muted-foreground flex items-center gap-2 text-xs'>
+                  <span>{video.duration}</span>
+                  <span>•</span>
+                  <span>{video.clips} clips</span>
+                </div>
+              </div>
+              <div className='flex flex-col items-end gap-1'>
+                <Badge variant='secondary' className='flex items-center gap-1'>
+                  <Sparkles className='h-3 w-3' />
+                  {video.viralScore}
+                </Badge>
+                <span
+                  className={`text-xs ${
+                    video.status === 'processed'
+                      ? 'text-green-500'
+                      : 'text-yellow-500'
+                  }`}
+                >
+                  {video.status}
+                </span>
+              </div>
             </div>
           ))}
         </div>
