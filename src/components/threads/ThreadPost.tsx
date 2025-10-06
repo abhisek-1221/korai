@@ -137,13 +137,6 @@ export default function ThreadPost({
             {characterCount}/280
           </div>
         </motion.div>
-
-        {/* Hover glow effect */}
-        <motion.div
-          className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-red-600/20 to-red-700/20 opacity-0'
-          animate={{ opacity: isHovered ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-        />
       </motion.div>
     </motion.div>
   );
