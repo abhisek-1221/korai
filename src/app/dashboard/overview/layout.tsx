@@ -1,15 +1,44 @@
+'use client';
+
 import PageContainer from '@/components/layout/page-container';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
-  CardAction,
   CardFooter
 } from '@/components/ui/card';
-import { IconTrendingDown, IconTrendingUp } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
 import React from 'react';
+import Image from 'next/image';
+
+const features = [
+  {
+    title: 'Generate Viral Shorts',
+    description: 'AI-powered clip identification',
+    iconPath: '/icons/clips.png',
+    href: '/dashboard/clips'
+  },
+  {
+    title: 'Clip to Quiz',
+    description: 'Create interactive quizzes',
+    iconPath: '/icons/quiz.png',
+    href: '/dashboard/quiz'
+  },
+  {
+    title: 'Chat with Video',
+    description: 'AI-powered conversations',
+    iconPath: '/icons/chat.png',
+    href: '/dashboard/chat'
+  },
+  {
+    title: 'Transcribe Video',
+    description: 'Extract text from videos',
+    iconPath: '/icons/transcript.png',
+    href: '/dashboard/transcribe'
+  }
+];
 
 export default function OverViewLayout({
   sales,
@@ -18,6 +47,7 @@ export default function OverViewLayout({
   sales: React.ReactNode;
   bar_stats: React.ReactNode;
 }) {
+  const router = useRouter();
   return (
     <PageContainer>
       <div className='flex flex-1 flex-col space-y-2'>
@@ -27,95 +57,39 @@ export default function OverViewLayout({
           </h2>
         </div>
 
-        <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
-          <Card className='@container/card'>
-            <CardHeader>
-              <CardDescription>Videos Analyzed</CardDescription>
-              <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                127
-              </CardTitle>
-              <CardAction>
-                <Badge variant='outline'>
-                  <IconTrendingUp />
-                  +23%
-                </Badge>
-              </CardAction>
-            </CardHeader>
-            <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-              <div className='line-clamp-1 flex gap-2 font-medium'>
-                More videos this month <IconTrendingUp className='size-4' />
-              </div>
-              <div className='text-muted-foreground'>
-                YouTube videos processed
-              </div>
-            </CardFooter>
-          </Card>
-          <Card className='@container/card'>
-            <CardHeader>
-              <CardDescription>Viral Clips Found</CardDescription>
-              <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                1,845
-              </CardTitle>
-              <CardAction>
-                <Badge variant='outline'>
-                  <IconTrendingUp />
-                  +18%
-                </Badge>
-              </CardAction>
-            </CardHeader>
-            <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-              <div className='line-clamp-1 flex gap-2 font-medium'>
-                AI-identified clips <IconTrendingUp className='size-4' />
-              </div>
-              <div className='text-muted-foreground'>
-                High virality score segments
-              </div>
-            </CardFooter>
-          </Card>
-          <Card className='@container/card'>
-            <CardHeader>
-              <CardDescription>Clips Exported</CardDescription>
-              <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                456
-              </CardTitle>
-              <CardAction>
-                <Badge variant='outline'>
-                  <IconTrendingUp />
-                  +34%
-                </Badge>
-              </CardAction>
-            </CardHeader>
-            <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-              <div className='line-clamp-1 flex gap-2 font-medium'>
-                Ready for social media <IconTrendingUp className='size-4' />
-              </div>
-              <div className='text-muted-foreground'>
-                Processed with subtitles
-              </div>
-            </CardFooter>
-          </Card>
-          <Card className='@container/card'>
-            <CardHeader>
-              <CardDescription>Credits Used</CardDescription>
-              <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                8,450
-              </CardTitle>
-              <CardAction>
-                <Badge variant='outline'>
-                  <IconTrendingUp />
-                  +12%
-                </Badge>
-              </CardAction>
-            </CardHeader>
-            <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-              <div className='line-clamp-1 flex gap-2 font-medium'>
-                API usage this month <IconTrendingUp className='size-4' />
-              </div>
-              <div className='text-muted-foreground'>
-                Total credits consumed
-              </div>
-            </CardFooter>
-          </Card>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
+          {features.map((feature, index) => (
+            <Card
+              key={index}
+              className='cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg'
+              onClick={() => router.push(feature.href)}
+            >
+              <CardHeader className='space-y-4'>
+                <div className='flex w-full items-center justify-center py-4'>
+                  <Image
+                    src={feature.iconPath}
+                    alt={feature.title}
+                    width={80}
+                    height={80}
+                    className='object-contain'
+                  />
+                </div>
+                <div className='space-y-1.5 text-center'>
+                  <CardTitle className='text-xl font-semibold'>
+                    {feature.title}
+                  </CardTitle>
+                  <CardDescription className='text-sm'>
+                    {feature.description}
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardFooter>
+                <Button variant='ghost' className='w-full'>
+                  Try Now →
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
         <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
           <div className='col-span-1'>{bar_stats}</div>
