@@ -347,6 +347,6 @@ The application uses **Inngest** for reliable background job processing:
 
 
 ## Documention
-Documention can be found at the docs page of [korai web app](https://docs-korai.vercel.app/)
+Documention can be found at the [docs page](https://docs.korai.run/) of [korai web app](https://korai.run/)
 
 ---
