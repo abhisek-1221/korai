@@ -15,14 +15,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { validateYoutubeVideoUrl } from '@/lib/youtube-validator';
-import {
-  Loader2,
-  Youtube,
-  Sparkles,
-  Video,
-  FileText,
-  FolderOpen
-} from 'lucide-react';
+import { Loader2, Youtube, Video, FolderOpen } from 'lucide-react';
 
 export default function ClipsPage() {
   const router = useRouter();
@@ -87,83 +80,31 @@ export default function ClipsPage() {
 
   return (
     <div className='h-screen overflow-y-auto'>
-      <div className='container mx-auto max-w-6xl px-4 py-8'>
+      <div className='container mx-auto max-w-5xl px-4 py-8'>
         {/* Header Section */}
-        <div className='mb-10 text-center'>
-          <div className='mb-4 flex items-center justify-center gap-3'>
-            <div className='bg-primary/10 rounded-full p-3'>
-              <Youtube className='text-primary h-8 w-8' />
-            </div>
-            <h1 className='from-primary to-primary/60 bg-gradient-to-r bg-clip-text text-4xl font-bold text-transparent'>
-              Upload YouTube Link
-            </h1>
-          </div>
-          <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>
-            Transform your YouTube videos into viral-worthy clips with
-            AI-powered analysis
+        <div className='mb-8'>
+          <h1 className='mb-2 text-3xl font-bold tracking-tight'>
+            Generate Viral Shorts
+          </h1>
+          <p className='text-muted-foreground text-base'>
+            AI-powered clip identification from YouTube videos
           </p>
         </div>
 
-        <div className='mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3'>
-          {/* Feature Cards */}
-          <Card className='border-2'>
-            <CardContent className='pt-6 text-center'>
-              <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10'>
-                <Sparkles className='h-6 w-6 text-blue-500' />
-              </div>
-              <h3 className='mb-2 font-semibold'>AI-Powered Analysis</h3>
-              <p className='text-muted-foreground text-sm'>
-                Advanced algorithms identify the most engaging moments
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className='border-2'>
-            <CardContent className='pt-6 text-center'>
-              <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10'>
-                <Video className='h-6 w-6 text-green-500' />
-              </div>
-              <h3 className='mb-2 font-semibold'>Precise Timestamps</h3>
-              <p className='text-muted-foreground text-sm'>
-                Get exact start and end times for each viral clip
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className='border-2'>
-            <CardContent className='pt-6 text-center'>
-              <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/10'>
-                <FileText className='h-6 w-6 text-purple-500' />
-              </div>
-              <h3 className='mb-2 font-semibold'>Detailed Insights</h3>
-              <p className='text-muted-foreground text-sm'>
-                Virality scores, summaries, and topic analysis
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Main Upload Form */}
-        <Card className='border-2 shadow-lg'>
-          <CardHeader className='bg-muted/50 border-b'>
-            <CardTitle className='flex items-center gap-2 text-2xl'>
-              <Youtube className='h-6 w-6 text-red-500' />
-              Video Information
-            </CardTitle>
-            <CardDescription className='text-base'>
-              Enter a YouTube URL and optional custom prompt to guide the AI
+        <Card>
+          <CardHeader className='border-b pb-4'>
+            <CardTitle className='text-lg font-semibold'>Video Input</CardTitle>
+            <CardDescription>
+              Enter a YouTube URL to identify viral-worthy clips
             </CardDescription>
           </CardHeader>
           <CardContent className='pt-6'>
-            <form onSubmit={handleSubmit} className='space-y-8'>
+            <form onSubmit={handleSubmit} className='space-y-6'>
               {/* YouTube URL Input */}
-              <div className='space-y-3'>
-                <Label
-                  htmlFor='youtubeUrl'
-                  className='flex items-center gap-2 text-base font-semibold'
-                >
-                  <Youtube className='h-4 w-4 text-red-500' />
-                  YouTube URL *
+              <div className='space-y-2'>
+                <Label htmlFor='youtubeUrl' className='text-sm font-medium'>
+                  YouTube URL
                 </Label>
                 <div className='relative'>
                   <Input
@@ -174,24 +115,22 @@ export default function ClipsPage() {
                     onChange={(e) => setYoutubeUrl(e.target.value)}
                     required
                     disabled={isLoading}
-                    className='h-12 pr-12 pl-4 text-base'
+                    className='h-11 pr-10'
                   />
-                  <Youtube className='text-muted-foreground absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2' />
+                  <Youtube className='text-muted-foreground/50 absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2' />
                 </div>
-                <p className='text-muted-foreground flex items-start gap-2 text-sm'>
-                  <span className='mt-0.5 text-blue-500'>ℹ️</span>
-                  Paste the full URL of the YouTube video you want to analyze
+                <p className='text-muted-foreground text-xs'>
+                  Paste the full URL of the video you want to analyze
                 </p>
               </div>
 
               {/* Prompt Input */}
-              <div className='space-y-3'>
-                <Label
-                  htmlFor='prompt'
-                  className='flex items-center gap-2 text-base font-semibold'
-                >
-                  <Sparkles className='h-4 w-4 text-yellow-500' />
-                  Custom Prompt (Optional)
+              <div className='space-y-2'>
+                <Label htmlFor='prompt' className='text-sm font-medium'>
+                  Custom Instructions{' '}
+                  <span className='text-muted-foreground font-normal'>
+                    (Optional)
+                  </span>
                 </Label>
                 <Textarea
                   id='prompt'
@@ -200,31 +139,31 @@ export default function ClipsPage() {
                   onChange={(e) => setPrompt(e.target.value)}
                   disabled={isLoading}
                   rows={4}
-                  className='resize-none text-base'
+                  className='resize-none'
                 />
-                <p className='text-muted-foreground flex items-start gap-2 text-sm'>
-                  <span className='mt-0.5 text-yellow-500'>✨</span>
-                  Add specific instructions to guide the AI in identifying clips
+                <p className='text-muted-foreground text-xs'>
+                  Provide specific guidance to help the AI identify relevant
+                  clips
                 </p>
               </div>
 
               {/* Action Buttons */}
-              <div className='flex gap-4 pt-4'>
+              <div className='flex gap-3 pt-2'>
                 <Button
                   type='submit'
                   disabled={isLoading || !youtubeUrl}
-                  size='lg'
-                  className='h-12 flex-1 text-base font-semibold'
+                  size='default'
+                  className='flex-1'
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className='mr-2 h-5 w-5 animate-spin' />
-                      Processing Video...
+                      <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      Processing...
                     </>
                   ) : (
                     <>
-                      <Sparkles className='mr-2 h-5 w-5' />
-                      Identify Viral Clips
+                      <Video className='mr-2 h-4 w-4' />
+                      Identify Clips
                     </>
                   )}
                 </Button>
@@ -232,13 +171,12 @@ export default function ClipsPage() {
                 <Button
                   type='button'
                   variant='outline'
-                  size='lg'
-                  className='h-12'
+                  size='default'
                   onClick={() => router.push('/dashboard/clips/videos')}
                   disabled={isLoading}
                 >
-                  <FolderOpen className='mr-2 h-5 w-5' />
-                  View Spaces
+                  <FolderOpen className='mr-2 h-4 w-4' />
+                  View All
                 </Button>
               </div>
             </form>
@@ -246,24 +184,62 @@ export default function ClipsPage() {
         </Card>
 
         {/* Info Section */}
-        <div className='bg-muted/50 mt-8 rounded-lg border p-6'>
-          <h3 className='mb-3 flex items-center gap-2 font-semibold'>
-            <Video className='h-5 w-5' />
-            How it works
-          </h3>
-          <ol className='text-muted-foreground ml-7 space-y-2 text-sm'>
-            <li className='list-decimal'>Submit your YouTube video URL</li>
-            <li className='list-decimal'>
-              AI analyzes the entire video for viral moments
-            </li>
-            <li className='list-decimal'>
-              Receive clips with timestamps, scores, and summaries
-            </li>
-            <li className='list-decimal'>
-              Preview and manage your clips in the Spaces section
-            </li>
-          </ol>
-        </div>
+        <Card className='mt-6'>
+          <CardHeader className='pb-4'>
+            <CardTitle className='text-base font-semibold'>
+              How It Works
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='space-y-3'>
+              <div className='flex gap-3'>
+                <div className='bg-muted flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium'>
+                  1
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-sm font-medium'>Submit Video URL</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Provide the YouTube video link you want to analyze
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <div className='bg-muted flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium'>
+                  2
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-sm font-medium'>AI Analysis</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Advanced algorithms identify viral-worthy moments and
+                    patterns
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <div className='bg-muted flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium'>
+                  3
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-sm font-medium'>Receive Results</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Get clips with timestamps, virality scores, and summaries
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <div className='bg-muted flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium'>
+                  4
+                </div>
+                <div className='space-y-1'>
+                  <p className='text-sm font-medium'>Export & Share</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Process and export clips with customizable settings
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
