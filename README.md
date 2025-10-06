@@ -1,6 +1,10 @@
-# Korai 🎬
+# Korai
 
-An AI-powered platform for YouTube content analysis, transformation, and interaction. Korai helps content creators and analysts extract maximum value from YouTube videos through intelligent clip identification, transcription, quiz generation, and interactive AI chat.
+An AI-powered platform for YouTube Content Engine. Korai helps content creators and analysts extract maximum value from YouTube videos through intelligent clip identification, transcription, quiz generation, and interactive AI chat and short form content generation.
+
+<img width="5088" height="3468" alt="image" src="https://github.com/user-attachments/assets/2e8e2f27-df1b-4bb3-9384-a11845ef894b" />
+
+
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.3.2-black?style=flat&logo=next.js)
 ![React](https://img.shields.io/badge/React-19.0.0-blue?style=flat&logo=react)
@@ -8,99 +12,87 @@ An AI-powered platform for YouTube content analysis, transformation, and interac
 ![Prisma](https://img.shields.io/badge/Prisma-6.16.3-2D3748?style=flat&logo=prisma)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.0-38B2AC?style=flat&logo=tailwind-css)
 
-## 🌟 Features
+## Features
 
-### 🎯 Core Features
+### Core Features
 
-#### 1. **Viral Clips Identification**
-- AI-powered analysis to identify the most engaging moments in YouTube videos
-- Automatic timestamp generation with precise start/end times
-- Virality scoring algorithm to rank clips by potential engagement
-- Custom prompt support for targeted clip identification
-- Related topics extraction for each clip
-- Complete transcript preservation for context
+### Korai Features
 
-#### 2. **Video Transcription**
-- High-quality transcription extraction from YouTube videos
-- Support for multiple languages with automatic language detection
-- Structured transcript with timestamps
-- Rate-limited API to ensure fair usage
-- Retry logic for reliable transcript extraction
+#### Viral Shorts Generator
 
-#### 3. **Interactive AI Chat**
-- Multi-model AI chat support (Gemini, Groq)
-- Web search integration via Perplexity AI
-- Streaming responses with smooth UI updates
-- Source citation and reasoning display
-- Rate limiting (30 chats per user per day)
-- Context-aware conversations
+* Intelligent reframing for optimal subject focus
+* Dynamic captioning with adaptive styling
+* Automated resizing across social formats
 
-#### 4. **Voice Chat**
-- Voice-to-text input for hands-free multinlingual interaction
-- YouTube video context integration
-- Microphone permission handling
-- Real-time recording status indicators
-- AI-powered voice chat responses
+#### Chat with Videos
 
-#### 5. **Quiz Generation**
-- Automated quiz creation from video content
-- Multiple question types support
-- Interactive quiz interface
-- Educational content transformation
+* Context-aware Q&A and content summarization
+* Integrate apps like notion/slack etc for automated workflows
+* AI-driven automation triggered directly from conversations
+
+#### Talk to Videos
+
+* Natural, multilingual voice interactions with video content
+* Real-time speech-to-response in multiple Indian languages
+* Dual output: synchronized text and audio responses
+
+#### Transcript Generation
+
+* High-precision transcripts with temporal alignment
+* Contextual search and semantic querying within transcripts
+* Export-ready formats for analysis or integration
+
+#### Interactive Quizzes
+
+* AI-generated quizzes derived from video context
+* Adaptive difficulty and diverse question formats
+* Immersive, feedback-rich learning experiences
+
 
 #### 6. **Playlist Analysis**
 - Batch processing of YouTube playlists
 - Aggregate insights across multiple videos
 - Comprehensive playlist analytics
 
-#### 7. **Project Management**
-- Kanban board for content organization
-- Drag-and-drop task management
-- Visual workflow management
-- Product catalog with data tables
-
-## 🏗️ Architecture
+---
 
 ### **Tech Stack**
 
-#### **Frontend**
-- **Framework**: Next.js 15.3.2 (App Router with Turbopack)
-- **UI Library**: React 19.0.0
-- **Language**: TypeScript 5.7.2
-- **Styling**: TailwindCSS 4.0 + CSS Modules
-- **Component Library**: Radix UI + shadcn/ui
-- **State Management**: Zustand
-- **Animations**: Motion (Framer Motion)
-- **Form Handling**: React Hook Form + Zod validation
-- **Data Tables**: TanStack Table
+| **Category**                | **Technology**                           | **Description**                                    |
+| --------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| **Frontend**                | **Next.js 15.3.2**                       | App Router with Turbopack                          |
+|                             | **React 19 + TypeScript 5.7.2**          | Modern UI and language foundation                  |
+|                             | **TailwindCSS 4.0 + CSS Modules**        | Utility-first and modular styling                  |
+|                             | **Radix UI + shadcn/ui**                 | Accessible, composable UI components               |
+|                             | **Zustand**                              | Lightweight state management                       |
+|                             | **Framer Motion**                        | Smooth, production-grade animations                |
+|                             | **React Hook Form + Zod**                | Form handling and schema validation                |
+|                             | **TanStack Table**                       | Advanced, performant data tables                   |
+| **Backend**                 | **Next.js API Routes**                   | Unified serverless backend                         |
+|                             | **PostgreSQL + Prisma 6.16.3**           | Type-safe ORM and relational database              |
+|                             | **Clerk**                                | Authentication and user management                 |
+|                             | **Inngest**                              | Event-driven background jobs                       |
+|                             | **AWS S3 (SDK v3)**                      | Scalable file storage                              |
+|                             | **Upstash Redis**                        | Distributed rate limiting                          |
+| **AI & ML Backend**         | **Modal**                                | Serverless AI infrastructure                       |
+|                             | **FastAPI**                              | High-performance inference API                     |
+|                             | **Hugging Face / TensorFlow**            | Model hosting and deep learning                    |
+|                             | **FFmpeg**                               | Video/audio processing and transcoding             |
+|                             | **WhisperX**                             | Accurate multilingual transcription with alignment |
+|                             | **LR-ASD**                               | Active Speaker Detection model                     |
+|                             | **Vercel AI SDK 5.0**                    | Unified AI orchestration layer                     |
+|                             | **LLMs:** Gemini, Cerebras, LLama   | Multi-provider large language models               |
+| **Video & Text Processing** | **YouTubei Data v3 API**                          | YouTube Fetures                        |
+|                             | **Marked / React Markdown / Remark GFM** | Markdown rendering and processing                  |
+| **Monitoring & Debugging**  | **Sentry**                               | Client + server error tracking                     |
+|                             | **Spotlight**                            | Local development debugging                        |
+| **Development Tools**       | **Bun Runtime**                          | Fast, modern JavaScript runtime                    |
+|                             | **ESLint + Prettier**                    | Linting and formatting                             |
+|                             | **Husky + Lint-staged**                  | Pre-commit quality checks                          |
+|                             | **Bun Package Manager**                  | Blazing-fast dependency management                 |
 
-#### **Backend**
-- **Framework**: Next.js API Routes
-- **Database**: PostgreSQL with Prisma ORM 6.16.3
-- **Authentication**: Clerk (complete user management)
-- **Background Jobs**: Inngest (event-driven workflows)
-- **File Storage**: AWS S3 (via AWS SDK v3)
-- **Rate Limiting**: Upstash Redis
+---
 
-#### **AI & ML**
-- **AI SDK**: Vercel AI SDK 5.0
-- **LLM Providers**:
-  - Google Gemini (via @ai-sdk/google)
-  - Cerebras (via @ai-sdk/cerebras)
-  - Perplexity (for web search)
-- **Video Processing**: YouTubei.js (official YouTube API wrapper)
-- **Text Processing**: Marked, React Markdown, Remark GFM
-
-#### **Monitoring & Error Tracking**
-- **Error Tracking**: Sentry (client + server monitoring)
-- **Development**: Spotlight integration for local debugging
-
-#### **Development Tools**
-- **Runtime**: Bun (fast JavaScript runtime)
-- **Linting**: ESLint + TypeScript ESLint
-- **Formatting**: Prettier with Tailwind plugin
-- **Git Hooks**: Husky + Lint-staged
-- **Package Manager**: Bun
 
 ### **Project Structure**
 
@@ -168,51 +160,30 @@ korai/
 └── config files           # Configuration files
 ```
 
-### **Database Schema**
+## 🔄 Background Processing
 
-```prisma
-model Video {
-  id               String   @id @default(cuid())
-  userId           String   // Clerk user ID
-  youtubeUrl       String
-  s3Key            String   // Storage key: youtube-videos/{uuid}
-  prompt           String?  // Custom analysis prompt
-  
-  // Metadata
-  totalClips       Int?
-  videoDuration    String?
-  detectedLanguage String?
-  s3Path           String?
-  
-  clips            Clip[]
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-  @@index([userId])
-  @@index([s3Key])
-}
+The application uses **Inngest** for reliable background job processing:
 
-model Clip {
-  id             String   @id @default(cuid())
-  videoId        String
-  video          Video    @relation(fields: [videoId], references: [id])
-  
-  start          String   // Timestamp
-  end            String   // Timestamp
-  title          String
-  summary        String   @db.Text
-  viralityScore  String
-  relatedTopics  String[] // Array of topics
-  transcript     String   @db.Text
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  @@index([videoId])
-  @@index([viralityScore])
-}
-```
+- **Event-Driven Architecture**: Triggered by `video/identify.clips` events
+- **Multi-Step Functions**: Sequential processing with built-in retries
+- **Database Integration**: Automatic clip storage after processing
+- **Error Handling**: Graceful failure recovery
+- **Webhook Support**: `/api/inngest` endpoint for Inngest platform
+
+## 📊 API Rate Limits
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `/api/chat` | 30 requests | per user per day |
+| `/api/transcribe` | Rate limited | per IP address |
+| `/api/clips/identify` | User authenticated | - | Identify Viral Moments
+
+
+# Documention
+Developer Documention can be found at the [docs page](https://docs.korai.run/) of [korai web app](https://korai.run/)
+
+---
+
 
 ## 🚀 Getting Started
 
@@ -325,28 +296,3 @@ bun run format:check    # Check code formatting
 # Git Hooks
 bun run prepare         # Set up Husky git hooks
 ```
-
-
-## 🔄 Background Processing
-
-The application uses **Inngest** for reliable background job processing:
-
-- **Event-Driven Architecture**: Triggered by `video/identify.clips` events
-- **Multi-Step Functions**: Sequential processing with built-in retries
-- **Database Integration**: Automatic clip storage after processing
-- **Error Handling**: Graceful failure recovery
-- **Webhook Support**: `/api/inngest` endpoint for Inngest platform
-
-## 📊 API Rate Limits
-
-| Endpoint | Limit | Window |
-|----------|-------|--------|
-| `/api/chat` | 30 requests | per user per day |
-| `/api/transcribe` | Rate limited | per IP address |
-| `/api/clips/identify` | User authenticated | - | Identify Viral Moments
-
-
-## Documention
-Documention can be found at the [docs page](https://docs.korai.run/) of [korai web app](https://korai.run/)
-
----
