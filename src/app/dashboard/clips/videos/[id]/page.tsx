@@ -38,7 +38,7 @@ import {
   Download,
   Sparkles
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface Clip {
   id: string;
@@ -80,7 +80,6 @@ interface Video {
 export default function VideoDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { toast } = useToast();
   const [video, setVideo] = useState<Video | null>(null);
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -125,11 +124,7 @@ export default function VideoDetailPage() {
       setVideo(data.video);
     } catch (error) {
       console.error('Error fetching video details:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch video details',
-        variant: 'destructive'
-      });
+      toast.error('Failed to fetch video details');
     } finally {
       setIsLoading(false);
     }
@@ -236,22 +231,17 @@ export default function VideoDetailPage() {
         throw new Error('Failed to start clip processing');
       }
 
-      toast({
-        title: 'Success!',
-        description: 'Clip processing started. Check the Exported tab soon.'
-      });
+      toast.success(
+        'Clip processing started and will be visible in exported tab soon'
+      );
 
       setIsConfigModalOpen(false);
       setSelectedClipsForExport(new Set());
       setTargetLanguage('none');
       setAspectRatio('9:16');
     } catch (error) {
-      console.error('Error processing clips:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to start clip processing',
-        variant: 'destructive'
-      });
+      console.error('Error processing clip:', error);
+      toast.error('Failed to process clip');
     } finally {
       setIsProcessing(false);
     }
@@ -289,11 +279,7 @@ export default function VideoDetailPage() {
       }
     } catch (error) {
       console.error('Error fetching exported clips:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch exported clips',
-        variant: 'destructive'
-      });
+      toast.error('Failed to fetch exported clips');
     } finally {
       setIsLoadingExported(false);
     }
@@ -327,11 +313,7 @@ export default function VideoDetailPage() {
       return data.url;
     } catch (error) {
       console.error('Error getting signed URL:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to generate download URL',
-        variant: 'destructive'
-      });
+      toast.error('Failed to generate download URL');
       return null;
     }
   };
