@@ -35,12 +35,12 @@ import {
 } from '@/components/ui/select';
 import PageContainer from '@/components/layout/page-container';
 import { Heading } from '@/components/ui/heading';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useQuizStore } from '../store/quiz-store';
 import { useFetchVideoAndTranscript, useQuizActions } from '../hooks';
+import { validateYoutubeVideoUrl } from '@/lib/youtube-validator';
 
 export default function QuizViewPage() {
-  const { toast } = useToast();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const {
@@ -80,11 +80,23 @@ export default function QuizViewPage() {
         parseInt(numQuestions) < 2 ||
         parseInt(numQuestions) > 10
       ) {
-        toast({
-          title: 'Warning',
-          description: 'Please select number of questions between 2 and 10',
-          variant: 'destructive'
-        });
+        toast.error('Please select number of questions between 2 and 10');
+        return;
+      }
+
+      // Check if URL is empty
+      if (!videoUrl || !videoUrl.trim()) {
+        toast.error('Please enter a YouTube video URL');
+        return;
+      }
+
+      // Validate YouTube URL
+      const validation = validateYoutubeVideoUrl(videoUrl);
+
+      if (!validation.isValid) {
+        toast.error(
+          validation.error || 'Please enter a valid YouTube video URL'
+        );
         return;
       }
 
@@ -92,7 +104,7 @@ export default function QuizViewPage() {
       abortControllerRef.current = new AbortController();
       await fetchVideoAndTranscript(abortControllerRef.current.signal);
     },
-    [numQuestions, toast, fetchVideoAndTranscript]
+    [numQuestions, fetchVideoAndTranscript, videoUrl]
   );
 
   // Cleanup on unmount

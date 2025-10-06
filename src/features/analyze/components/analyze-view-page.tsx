@@ -27,6 +27,8 @@ import PageContainer from '@/components/layout/page-container';
 import { Heading } from '@/components/ui/heading';
 import { useAnalyzeStore } from '../store/analyze-store';
 import { useFetchPlaylist, usePlaylistFilters } from '../hooks';
+import { validateYoutubePlaylistUrl } from '@/lib/youtube-validator';
+import { toast } from 'sonner';
 
 export default function AnalyzeViewPage() {
   const {
@@ -52,8 +54,24 @@ export default function AnalyzeViewPage() {
   const { sortedVideos, adjustedDuration, rangeOptions } = usePlaylistFilters();
 
   const handleAnalyze = useCallback(() => {
+    // Check if URL is empty
+    if (!playlistUrl || !playlistUrl.trim()) {
+      toast.error('Please enter a YouTube playlist URL');
+      return;
+    }
+
+    // Validate YouTube playlist URL
+    const validation = validateYoutubePlaylistUrl(playlistUrl);
+
+    if (!validation.isValid) {
+      toast.error(
+        validation.error || 'Please enter a valid YouTube playlist URL'
+      );
+      return;
+    }
+
     fetchPlaylist();
-  }, [fetchPlaylist]);
+  }, [fetchPlaylist, playlistUrl]);
 
   const handleReset = useCallback(() => {
     setIsSuccess(false);

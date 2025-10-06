@@ -28,7 +28,8 @@ import {
 import PageContainer from '@/components/layout/page-container';
 import { Heading } from '@/components/ui/heading';
 import FeatureCard from '@/components/hsr/FeatureCard';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { validateYoutubeVideoUrl } from '@/lib/youtube-validator';
 import type React from 'react';
 
 interface Message {
@@ -54,7 +55,6 @@ const LANGUAGES = [
 ];
 
 export default function VoiceChatViewPage() {
-  const { toast } = useToast();
   const [videoUrl, setVideoUrl] = useState('');
   const [transcript, setTranscript] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -211,11 +211,7 @@ export default function VoiceChatViewPage() {
 
       const userText = sttData.text;
       if (!userText.trim()) {
-        toast({
-          title: 'No Speech Detected',
-          description: 'Please try speaking more clearly.',
-          variant: 'destructive'
-        });
+        toast.error('No speech detected. Please try speaking more clearly.');
         return;
       }
 
@@ -278,11 +274,7 @@ export default function VoiceChatViewPage() {
       playAudio(audioUrl);
     } catch (error: any) {
       console.error('Error processing audio:', error);
-      toast({
-        title: 'Processing Error',
-        description: error.message || 'Failed to process audio input',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'Failed to process audio input');
     } finally {
       setIsProcessingAudio(false);
     }
@@ -332,11 +324,7 @@ export default function VoiceChatViewPage() {
       return true;
     } catch (error) {
       console.error('Error accessing microphone:', error);
-      toast({
-        title: 'Microphone Error',
-        description: 'Unable to access microphone. Please check permissions.',
-        variant: 'destructive'
-      });
+      toast.error('Unable to access microphone. Please check permissions.');
       return false;
     }
   };
@@ -344,11 +332,15 @@ export default function VoiceChatViewPage() {
   const handleVideoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoUrl.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a YouTube URL',
-        variant: 'destructive'
-      });
+      toast.error('Please enter a YouTube URL');
+      return;
+    }
+
+    // Validate YouTube URL
+    const validation = validateYoutubeVideoUrl(videoUrl);
+
+    if (!validation.isValid) {
+      toast.error(validation.error || 'Please enter a valid YouTube video URL');
       return;
     }
 
@@ -386,19 +378,12 @@ export default function VoiceChatViewPage() {
         }
       ]);
 
-      toast({
-        title: 'Success',
-        description:
-          'Voice Agent Ready. Click the microphone to start speaking!',
-        variant: 'default'
-      });
+      toast.success(
+        'Voice Agent Ready. Click the microphone to start speaking!'
+      );
     } catch (error: any) {
       console.error('Error fetching transcript:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to fetch transcript',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'Failed to fetch transcript');
     } finally {
       setLoading(false);
     }
@@ -415,11 +400,7 @@ export default function VoiceChatViewPage() {
     mediaRecorderRef.current?.start();
     monitorAudioLevel();
 
-    toast({
-      title: 'Recording Started',
-      description: 'Speak now... Click the microphone again to stop.',
-      variant: 'default'
-    });
+    toast.info('Recording... Click the microphone again to stop.');
   };
 
   const stopRecording = () => {
@@ -472,11 +453,7 @@ export default function VoiceChatViewPage() {
       mediaRecorderRef.current = null;
     }
 
-    toast({
-      title: 'Stopped',
-      description: 'Recording stopped.',
-      variant: 'default'
-    });
+    toast.info('Recording stopped.');
   };
 
   const playAudio = (audioUrl: string) => {
@@ -491,11 +468,7 @@ export default function VoiceChatViewPage() {
     audio.onended = () => setIsPlayingAudio(false);
     audio.onerror = () => {
       setIsPlayingAudio(false);
-      toast({
-        title: 'Audio Error',
-        description: 'Failed to play audio response',
-        variant: 'destructive'
-      });
+      toast.error('Failed to play audio response');
     };
 
     audio.play().catch(console.error);

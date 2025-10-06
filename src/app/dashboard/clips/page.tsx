@@ -13,7 +13,8 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { validateYoutubeVideoUrl } from '@/lib/youtube-validator';
 import {
   Loader2,
   Youtube,
@@ -31,6 +32,21 @@ export default function ClipsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if URL is empty
+    if (!youtubeUrl || !youtubeUrl.trim()) {
+      toast.error('Please enter a YouTube video URL');
+      return;
+    }
+
+    // Validate YouTube URL
+    const validation = validateYoutubeVideoUrl(youtubeUrl);
+
+    if (!validation.isValid) {
+      toast.error(validation.error || 'Please enter a valid YouTube video URL');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -51,10 +67,7 @@ export default function ClipsPage() {
         throw new Error(data.error || 'Failed to start clip identification');
       }
 
-      toast({
-        title: 'Success!',
-        description: 'Video processing started. This may take a few minutes.'
-      });
+      toast.success('Video processing started. This may take a few minutes.');
 
       // Reset form
       setYoutubeUrl('');
@@ -64,12 +77,9 @@ export default function ClipsPage() {
       router.push('/dashboard/clips/videos');
     } catch (error) {
       console.error('Error:', error);
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Failed to start processing',
-        variant: 'destructive'
-      });
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to start processing'
+      );
     } finally {
       setIsLoading(false);
     }
