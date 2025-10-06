@@ -1,8 +1,5 @@
-import { delay } from '@/constants/mock-api';
-import { BarGraph } from '@/features/overview/components/bar-graph';
+import { YouTubePlayer } from '@/features/overview/components/youtube-player';
 
-export default async function BarStats() {
-  await await delay(1000);
-
-  return <BarGraph />;
+export default function BarStats() {
+  return <YouTubePlayer />;
 }
