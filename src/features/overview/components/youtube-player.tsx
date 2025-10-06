@@ -8,10 +8,19 @@ import {
   CardDescription
 } from '@/components/ui/card';
 import { useVideoPlayerStore } from '../store/video-player-store';
+import { sampleVideoIds } from '@/lib/sample-data';
 import { Play } from 'lucide-react';
+import { useEffect } from 'react';
 
 export function YouTubePlayer() {
-  const { selectedVideoId } = useVideoPlayerStore();
+  const { selectedVideoId, setSelectedVideoId } = useVideoPlayerStore();
+
+  // Auto-select first video on mount if none selected
+  useEffect(() => {
+    if (!selectedVideoId && sampleVideoIds.length > 0) {
+      setSelectedVideoId(sampleVideoIds[0]);
+    }
+  }, [selectedVideoId, setSelectedVideoId]);
 
   return (
     <Card className='flex h-full flex-col'>
