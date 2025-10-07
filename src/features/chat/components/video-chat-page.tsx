@@ -72,6 +72,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ThreadPost from '@/components/threads/ThreadPost';
 import ThreadSkeleton from '@/components/threads/ThreadSkeleton';
 import { Copy, Plug2, Check } from 'lucide-react';
+import { Gemini, Meta, OpenAI } from '@/lib/icons/models';
 
 const suggestionGroups = [
   {
@@ -79,36 +80,41 @@ const suggestionGroups = [
     icon: FileText,
     items: [
       'Summarize this video in one or two sentences',
-      'What are the main points or segments covered?'
+      'What are the main points or segments covered?',
+      'What are the key takeaways?'
     ]
   },
   {
     label: 'Comprehension',
     icon: Search,
     items: [
-      'What is the main topic or purpose of this video?',
-      'What are the key takeaways?',
+      'List Pain Points mentioned',
+      'List all the Questions asked',
       'Who is the target audience?'
     ]
   },
   {
-    label: 'Reflect',
+    label: 'Social',
     icon: SquareActivity,
-    items: [
-      'How did this video make you feel?',
-      'What emotional tone did the speaker use?'
-    ]
+    items: ['Write a Blog post on this', 'Generate a Linkedin Post on this']
   }
 ];
 
 const models = [
   {
-    name: 'Llama 3.1 70B',
-    value: 'meta-llama/llama-3.1-70b-instruct'
+    name: 'Gemini Flash (Recommended)',
+    value: 'gemini-2.5-flash',
+    logo: Gemini
   },
   {
-    name: 'Llama 4 Maverick',
-    value: 'meta-llama/llama-4-maverick-instruct'
+    name: 'Llama 3.1 (Cerebras)',
+    value: 'llama-3.3-70b',
+    logo: Meta
+  },
+  {
+    name: 'GPT-OSS (Cerebras)',
+    value: 'gpt-oss-120b',
+    logo: OpenAI
   }
 ];
 
@@ -483,14 +489,20 @@ Answer questions based on this transcript. Be conversational, helpful, and accur
                       <PromptInputModelSelectValue />
                     </PromptInputModelSelectTrigger>
                     <PromptInputModelSelectContent>
-                      {models.map((model) => (
-                        <PromptInputModelSelectItem
-                          key={model.value}
-                          value={model.value}
-                        >
-                          {model.name}
-                        </PromptInputModelSelectItem>
-                      ))}
+                      {models.map((model) => {
+                        const Logo = model.logo;
+                        return (
+                          <PromptInputModelSelectItem
+                            key={model.value}
+                            value={model.value}
+                          >
+                            <div className='flex items-center gap-2'>
+                              <Logo className='h-3 w-3' />
+                              <span>{model.name}</span>
+                            </div>
+                          </PromptInputModelSelectItem>
+                        );
+                      })}
                     </PromptInputModelSelectContent>
                   </PromptInputModelSelect>
                 </PromptInputTools>

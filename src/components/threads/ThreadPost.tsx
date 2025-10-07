@@ -64,17 +64,17 @@ export default function ThreadPost({
               transition={{ duration: 0.2 }}
             >
               <Avatar className='h-10 w-10 border-2 border-zinc-600'>
-                <AvatarImage src='https://github.com/shadcn.png' />
+                <AvatarImage src='https://github.com/abhisek-1221.png' />
                 <AvatarFallback>YT</AvatarFallback>
               </Avatar>
             </motion.div>
             <div>
               <div className='flex items-center space-x-2'>
-                <span className='font-semibold text-white'>jif.ai</span>
+                <span className='font-semibold text-white'>sek</span>
                 <div className='flex h-4 w-4 items-center justify-center rounded-full bg-blue-500'>
                   <span className='text-xs text-white'>✓</span>
                 </div>
-                <span className='text-sm text-zinc-400'>@jif.ai</span>
+                <span className='text-sm text-zinc-400'>@Abhisektwts</span>
                 <span className='text-sm text-zinc-500'>·</span>
                 <span className='text-sm text-zinc-500'>now</span>
               </div>

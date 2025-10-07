@@ -159,7 +159,7 @@ export async function POST(req: Request) {
       system?: string;
     } = await req.json();
 
-    const selectedModel = getModel(DEFAULT_MODEL);
+    const selectedModel = getModel(model || DEFAULT_MODEL);
 
     // Check if messages is UIMessage format or simple format
     let processedMessages;
