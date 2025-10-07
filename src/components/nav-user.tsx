@@ -25,6 +25,7 @@ import {
   SidebarMenuItem,
   useSidebar
 } from '@/components/ui/sidebar';
+import { useRouter } from 'next/navigation';
 
 export function NavUser({
   user
@@ -36,6 +37,7 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const router = useRouter();
 
   return (
     <SidebarMenu>
@@ -88,11 +90,15 @@ export function NavUser({
                 <IconCircleCheck className='mr-2 h-4 w-4' />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => router.push('/dashboard/billing')}
+              >
                 <IconCreditCard className='mr-2 h-4 w-4' />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => router.push('/dashboard/notifications')}
+              >
                 <IconBell className='mr-2 h-4 w-4' />
                 Notifications
               </DropdownMenuItem>
