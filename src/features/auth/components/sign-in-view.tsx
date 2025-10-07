@@ -68,7 +68,7 @@ export default function SignInViewPage() {
         <div className='flex w-full max-w-md flex-col items-center justify-center space-y-6'>
           <ClerkSignInForm
             initialValues={{
-              emailAddress: 'your_mail+clerk_test@example.com'
+              emailAddress: 'yourmail@example.com'
             }}
           />
 
