@@ -376,7 +376,7 @@ export default function VideoDetailPage() {
         <div className='flex items-start justify-between'>
           <div>
             <h1 className='mb-2 text-3xl font-bold tracking-tight'>
-              Video Clips
+              Select Identified Clips to Generate Shorts
             </h1>
             <p className='text-muted-foreground'>
               {video.totalClips} viral clips identified
@@ -419,12 +419,8 @@ export default function VideoDetailPage() {
                 size='sm'
               >
                 <CircleChevronRight className='mr-2 h-4 w-4' />
-                Generate Shorts ({selectedClipsForExport.size})
+                Generate Shorts ({selectedClipsForExport.size} clips selected)
               </Button>
-              <p className='text-muted-foreground text-xs dark:text-white'>
-                Select identified clips first to export with captions in any
-                aspect ratio
-              </p>
             </div>
           </div>
 
