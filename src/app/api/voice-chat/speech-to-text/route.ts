@@ -23,10 +23,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate audio file
+    if (!(audioFile instanceof Blob)) {
+      return NextResponse.json(
+        { error: 'Invalid audio file format' },
+        { status: 400 }
+      );
+    }
+
+    if (audioFile.size === 0) {
+      return NextResponse.json(
+        { error: 'Audio file is empty' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Received audio file:', {
+      name: audioFile.name,
+      size: audioFile.size,
+      type: audioFile.type,
+      language: language
+    });
+
     const client = new SarvamAIClient({ apiSubscriptionKey: API_KEY });
 
+    // Convert to Blob instead of File for better compatibility
     const buffer = await audioFile.arrayBuffer();
-    const file = new File([buffer], audioFile.name, { type: audioFile.type });
+    const blob = new Blob([buffer], { type: audioFile.type || 'audio/webm' });
+
+    // Create File with proper constructor
+    const file = new File([blob], audioFile.name || 'audio.webm', {
+      type: audioFile.type || 'audio/webm',
+      lastModified: Date.now()
+    });
 
     const languageMap: { [key: string]: string } = {
       'en-US': 'en-IN',
@@ -44,10 +73,22 @@ export async function POST(request: NextRequest) {
 
     const sarvamLanguage = languageMap[language] || 'hi-IN';
 
+    console.log('Transcription request:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      language: sarvamLanguage
+    });
+
     const response = await client.speechToText.transcribe({
       file: file,
       model: 'saarika:v2.5',
       language_code: sarvamLanguage as any
+    });
+
+    console.log('Transcription response received:', {
+      transcriptLength: response.transcript?.length,
+      hasTranscript: !!response.transcript
     });
 
     return NextResponse.json({
@@ -55,9 +96,16 @@ export async function POST(request: NextRequest) {
       language: language
     });
   } catch (error: any) {
-    console.error('Speech-to-text error:', error);
+    console.error('Speech-to-text error:', {
+      message: error.message,
+      stack: error.stack,
+      error: JSON.stringify(error, null, 2)
+    });
     return NextResponse.json(
-      { error: error.message || 'Failed to transcribe audio' },
+      {
+        error: error.message || 'Failed to transcribe audio',
+        details: error.stack?.split('\n')[0] || 'No additional details'
+      },
       { status: 500 }
     );
   }
