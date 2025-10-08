@@ -36,9 +36,22 @@ import {
   ExternalLink,
   TrendingUp,
   Download,
-  Sparkles
+  Sparkles,
+  CircleChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const LANGUAGE_MAP = {
+  'es-ES': 'Spanish (Spain)',
+  'ja-JP': 'Japanese',
+  'ko-KR': 'Korean',
+  'en-US': 'English',
+  'ru-RU': 'Russian',
+  'nl-NL': 'Dutch',
+  'pl-PL': 'Polish',
+  'hi-IN': 'Hindi',
+  'od-IN': 'Odia'
+};
 
 interface Clip {
   id: string;
@@ -404,7 +417,7 @@ export default function VideoDetailPage() {
               disabled={selectedClipsForExport.size === 0}
               size='sm'
             >
-              <Sparkles className='mr-2 h-4 w-4' />
+              <CircleChevronRight className='mr-2 h-4 w-4' />
               Generate Shorts ({selectedClipsForExport.size})
             </Button>
           </div>
@@ -863,13 +876,11 @@ export default function VideoDetailPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='none'>None (Original)</SelectItem>
-                  <SelectItem value='en'>English</SelectItem>
-                  <SelectItem value='es'>Spanish</SelectItem>
-                  <SelectItem value='fr'>French</SelectItem>
-                  <SelectItem value='de'>German</SelectItem>
-                  <SelectItem value='hi'>Hindi</SelectItem>
-                  <SelectItem value='ja'>Japanese</SelectItem>
-                  <SelectItem value='ko'>Korean</SelectItem>
+                  {Object.entries(LANGUAGE_MAP).map(([code, name]) => (
+                    <SelectItem key={code} value={code}>
+                      {name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -899,7 +910,7 @@ export default function VideoDetailPage() {
                 </>
               ) : (
                 <>
-                  <Sparkles className='mr-2 h-4 w-4' />
+                  <CircleChevronRight className='mr-2 h-4 w-4' />
                   Generate Clips
                 </>
               )}
