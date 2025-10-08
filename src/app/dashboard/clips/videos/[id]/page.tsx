@@ -404,7 +404,7 @@ export default function VideoDetailPage() {
         </Card>
       ) : (
         <Tabs defaultValue='clips' className='w-full'>
-          <div className='mb-4 flex items-center justify-between'>
+          <div className='mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
             <TabsList>
               <TabsTrigger value='clips'>Identified Clips</TabsTrigger>
               <TabsTrigger value='exported' onClick={fetchExportedClips}>
@@ -412,14 +412,20 @@ export default function VideoDetailPage() {
               </TabsTrigger>
             </TabsList>
 
-            <Button
-              onClick={handleGenerateShorts}
-              disabled={selectedClipsForExport.size === 0}
-              size='sm'
-            >
-              <CircleChevronRight className='mr-2 h-4 w-4' />
-              Generate Shorts ({selectedClipsForExport.size})
-            </Button>
+            <div className='flex flex-col items-end gap-2'>
+              <Button
+                onClick={handleGenerateShorts}
+                disabled={selectedClipsForExport.size === 0}
+                size='sm'
+              >
+                <CircleChevronRight className='mr-2 h-4 w-4' />
+                Generate Shorts ({selectedClipsForExport.size})
+              </Button>
+              <p className='text-muted-foreground text-xs dark:text-white'>
+                Select identified clips first to export with captions in any
+                aspect ratio
+              </p>
+            </div>
           </div>
 
           <TabsContent value='clips'>
