@@ -36,8 +36,8 @@ import {
   ExternalLink,
   TrendingUp,
   Download,
-  Sparkles,
-  CircleChevronRight
+  CircleChevronRight,
+  Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -653,7 +653,7 @@ export default function VideoDetailPage() {
                 {/* MIDDLE: Video Player and Preview */}
                 <div className='lg:col-span-5'>
                   {selectedExportedClip && (
-                    <Card>
+                    <Card className='border-0 bg-transparent'>
                       <CardHeader className='pb-3'>
                         <CardTitle className='text-lg'>
                           {selectedExportedClip.originalClip?.title ||
@@ -715,36 +715,16 @@ export default function VideoDetailPage() {
 
                         {/* Download Button */}
                         <Button
-                          className='w-full'
+                          className='w-full cursor-pointer'
                           size='lg'
                           onClick={() =>
                             handleDownloadClip(selectedExportedClip)
                           }
+                          variant={'outline'}
                         >
                           <Download className='mr-2 h-5 w-5' />
                           Download Clip
                         </Button>
-
-                        {/* Metadata */}
-                        <div className='grid grid-cols-2 gap-3 pt-2'>
-                          <div className='bg-muted rounded-lg p-3'>
-                            <p className='text-muted-foreground mb-1 text-xs font-medium'>
-                              Aspect Ratio
-                            </p>
-                            <p className='text-sm font-semibold'>
-                              {selectedExportedClip.aspectRatio}
-                            </p>
-                          </div>
-                          <div className='bg-muted rounded-lg p-3'>
-                            <p className='text-muted-foreground mb-1 text-xs font-medium'>
-                              Language
-                            </p>
-                            <p className='text-sm font-semibold'>
-                              {selectedExportedClip.targetLanguage ||
-                                'Original'}
-                            </p>
-                          </div>
-                        </div>
                       </CardContent>
                     </Card>
                   )}
@@ -755,14 +735,14 @@ export default function VideoDetailPage() {
                   {selectedExportedClip &&
                     selectedExportedClip.originalClip && (
                       <Card
-                        className='scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent overflow-y-auto'
-                        style={{ maxHeight: 'calc(100vh - 280px)' }}
+                        className='scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent max-h-screen overflow-y-auto border-0 bg-transparent'
+                        // style={{ maxHeight: 'calc(100vh - 280px)' }}
                       >
                         <CardContent className='space-y-6 p-6'>
                           {/* Viral Score */}
-                          <div className='border-primary/20 from-primary/5 to-primary/10 rounded-lg border bg-gradient-to-br p-4'>
+                          <div className='border-0 bg-transparent p-4'>
                             <div className='mb-3 flex items-center gap-2'>
-                              <Sparkles className='text-primary h-5 w-5' />
+                              <Activity className='text-primary h-5 w-5' />
                               <h3 className='text-base font-semibold'>
                                 Viral Score
                               </h3>
@@ -815,7 +795,7 @@ export default function VideoDetailPage() {
                               Transcript
                             </h3>
                             <div className='rounded-lg bg-black/30 p-4'>
-                              <p className='text-sm leading-relaxed whitespace-pre-wrap text-gray-300'>
+                              <p className='text-sm leading-relaxed whitespace-pre-wrap text-black dark:text-gray-300'>
                                 {selectedExportedClip.originalClip.transcript}
                               </p>
                             </div>
