@@ -68,6 +68,106 @@ interface ProcessClipsResponse {
   processed_clips: ProcessedClipResponse[];
 }
 
+interface TranscriptionSegment {
+  start: number;
+  end: number;
+  text: string;
+  speaker: string;
+}
+
+interface TranscriptionResponse {
+  transcription: TranscriptionSegment[];
+}
+
+export const transcribeWithSpeakers = inngest.createFunction(
+  {
+    id: 'transcribe-with-speakers',
+    name: 'Transcribe Video with Speaker Diarization'
+  },
+  { event: 'video/transcribe.with.speakers' },
+  async ({ event, step }) => {
+    const { youtubeUrl, userId } = event.data;
+
+    // Step 1: Create initial transcription record
+    const transcriptionData = await step.run(
+      'create-transcription-record',
+      async () => {
+        const transcription = await prisma.transcription.create({
+          data: {
+            userId,
+            youtubeUrl,
+            status: 'processing'
+          }
+        });
+
+        return { transcription };
+      }
+    );
+
+    // Step 2: Call the backend API for transcription
+    const transcriptionResponse = await step.run(
+      'call-transcription-api',
+      async () => {
+        const apiUrl = process.env.TRANSCRIPTION_API_URL;
+
+        if (!apiUrl) {
+          throw new Error(
+            'TRANSCRIPTION_API_URL environment variable is not set'
+          );
+        }
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CLIPS_API_TOKEN}`
+          },
+          body: JSON.stringify({
+            youtube_url: youtubeUrl
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.statusText}`);
+        }
+
+        const data: TranscriptionResponse = await response.json();
+        return data;
+      }
+    );
+
+    // Step 3: Save transcription segments to database
+    await step.run('save-transcription-segments', async () => {
+      if (
+        transcriptionResponse.transcription &&
+        transcriptionResponse.transcription.length > 0
+      ) {
+        await prisma.transcriptionSegment.createMany({
+          data: transcriptionResponse.transcription.map((segment) => ({
+            transcriptionId: transcriptionData.transcription.id,
+            start: segment.start,
+            end: segment.end,
+            text: segment.text,
+            speaker: segment.speaker,
+            speakerName: null
+          }))
+        });
+
+        // Update transcription status to completed
+        await prisma.transcription.update({
+          where: { id: transcriptionData.transcription.id },
+          data: { status: 'completed' }
+        });
+      }
+    });
+
+    return {
+      transcriptionId: transcriptionData.transcription.id,
+      segmentCount: transcriptionResponse.transcription.length
+    };
+  }
+);
+
 export const identifyClips = inngest.createFunction(
   { id: 'identify-clips', name: 'Identify Viral Clips from YouTube Video' },
   { event: 'video/identify.clips' },

@@ -69,3 +69,37 @@ model ExportedClip {
   
   @@index([videoId])
 }
+
+model Transcription {
+  id             String   @id @default(cuid())
+  userId         String   // Clerk user ID
+  youtubeUrl     String
+  status         String   @default("processing") // processing, completed, failed
+  
+  segments       TranscriptionSegment[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model TranscriptionSegment {
+  id              String        @id @default(cuid())
+  transcriptionId String
+  transcription   Transcription @relation(fields: [transcriptionId], references: [id], onDelete: Cascade)
+  
+  start           Float         // Start timestamp in seconds
+  end             Float         // End timestamp in seconds
+  text            String        @db.Text
+  speaker         String        // Original speaker ID from API (e.g., "SPEAKER_00")
+  speakerName     String?       // Custom speaker name assigned by user
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([transcriptionId])
+  @@index([speaker])
+}
+
