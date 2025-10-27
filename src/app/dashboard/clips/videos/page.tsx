@@ -141,7 +141,7 @@ export default function VideosPage() {
           </div>
           <Button onClick={() => router.push('/dashboard/clips')}>
             <Plus className='mr-2 h-4 w-4' />
-            Add Video
+            Create Videos
           </Button>
         </div>
 

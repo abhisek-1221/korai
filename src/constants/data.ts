@@ -60,20 +60,46 @@ export const navItems: NavItem[] = [
     ]
   },
   {
-    title: 'Generate Shorts',
-    url: '/dashboard/clips',
-    icon: 'video',
+    title: 'Diarized Transcript',
+    url: '#',
+    icon: 'user',
     isActive: false,
-    shortcut: ['s', 's'],
-    items: []
+    items: [
+      {
+        title: 'New Transcription',
+        url: '/dashboard/transcription',
+        icon: 'media',
+        shortcut: ['d', 't']
+      },
+      {
+        title: 'Transcription List',
+        url: '/dashboard/transcription/list',
+        icon: 'post',
+        shortcut: ['d', 'l']
+      }
+    ]
   },
   {
-    title: 'My Spaces',
-    url: '/dashboard/clips/videos',
-    icon: 'folder',
+    title: 'Viral Shorts',
+    url: '#',
+    icon: 'video',
     isActive: false,
-    shortcut: ['s', 'p'],
-    items: []
+    items: [
+      {
+        title: 'Generate Shorts',
+        url: '/dashboard/clips',
+        icon: 'video',
+        shortcut: ['s', 's'],
+        items: []
+      },
+      {
+        title: 'My Shorts',
+        url: '/dashboard/clips/videos',
+        icon: 'folder',
+        shortcut: ['s', 'p'],
+        items: []
+      }
+    ]
   }
 ];
 
