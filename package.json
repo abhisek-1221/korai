@@ -72,6 +72,7 @@
     "@tanstack/react-table": "^8.21.2",
     "@upstash/ratelimit": "^2.0.6",
     "@upstash/redis": "^1.35.4",
+    "@xyflow/react": "^12.9.1",
     "ai": "^5.0.60",
     "ai-elements": "^1.1.2",
     "class-variance-authority": "^0.7.1",
