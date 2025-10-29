@@ -77,6 +77,7 @@ model Transcription {
   status         String   @default("processing") // processing, completed, failed
   
   segments       TranscriptionSegment[]
+  mindmap        Mindmap?
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -101,5 +102,21 @@ model TranscriptionSegment {
   
   @@index([transcriptionId])
   @@index([speaker])
+}
+
+model Mindmap {
+  id              String        @id @default(cuid())
+  transcriptionId String        @unique
+  transcription   Transcription @relation(fields: [transcriptionId], references: [id], onDelete: Cascade)
+  
+  title           String
+  status          String        @default("processing") // processing, completed, failed
+  data            Json?         // Store the mindmap nodes and edges as JSON
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([transcriptionId])
+  @@index([status])
 }
 

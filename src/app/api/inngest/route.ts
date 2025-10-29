@@ -3,7 +3,8 @@ import { inngest } from '@/lib/inngest';
 import {
   identifyClips,
   processClips,
-  transcribeWithSpeakers
+  transcribeWithSpeakers,
+  generateMindmap
 } from '@/inngest/functions';
 
 // Create the Inngest serve handler
@@ -11,6 +12,11 @@ import {
 // For production, add INNGEST_SIGNING_KEY to .env.local
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [identifyClips, processClips, transcribeWithSpeakers],
+  functions: [
+    identifyClips,
+    processClips,
+    transcribeWithSpeakers,
+    generateMindmap
+  ],
   signingKey: process.env.INNGEST_SIGNING_KEY // Optional: only needed for production
 });

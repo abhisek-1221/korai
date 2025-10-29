@@ -1,54 +1,26 @@
-import { generateObject } from 'ai';
-import { NextResponse } from 'next/server';
-import { getModel, DEFAULT_MODEL } from '@/lib/providers';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-
-export const maxDuration = 60;
-
-// Schema for mindmap nodes
-const MindmapNodeSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  description: z.string().optional(),
-  category: z.enum(['main', 'topic', 'subtopic', 'detail'])
-});
-
-const MindmapEdgeSchema = z.object({
-  source: z.string(),
-  target: z.string()
-});
-
-const MindmapSchema = z.object({
-  title: z.string(),
-  nodes: z.array(MindmapNodeSchema),
-  edges: z.array(MindmapEdgeSchema)
-});
+import { inngest } from '@/lib/inngest';
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const transcriptionId = params.id;
+    const { id: transcriptionId } = await params;
 
-    // Fetch the transcription with segments
+    // Verify transcription belongs to user
     const transcription = await prisma.transcription.findUnique({
-      where: { id: transcriptionId, userId },
-      include: {
-        segments: {
-          orderBy: { start: 'asc' }
-        }
+      where: {
+        id: transcriptionId,
+        userId
       }
     });
 
@@ -59,61 +31,76 @@ export async function POST(
       );
     }
 
-    // Combine all segments into a full transcript
-    const fullTranscript = transcription.segments
-      .map((seg) => {
-        const speaker = seg.speakerName || seg.speaker;
-        return `${speaker}: ${seg.text}`;
-      })
-      .join('\n');
-
-    // Truncate if too long (to stay within token limits)
-    const maxLength = 15000;
-    const truncatedTranscript =
-      fullTranscript.length > maxLength
-        ? fullTranscript.substring(0, maxLength) + '...[truncated]'
-        : fullTranscript;
-
-    const selectedModel = getModel(DEFAULT_MODEL);
-
-    // Generate mindmap structure using AI
-    const result = await generateObject({
-      model: selectedModel as any,
-      schema: MindmapSchema,
-      system: `You are an expert at analyzing transcripts and creating hierarchical mindmaps.
-Create a comprehensive mindmap that captures the key concepts, topics, and relationships from the transcript.
-
-Guidelines:
-- Create a central main node representing the overall topic
-- Create topic nodes for major themes or sections
-- Create subtopic nodes for supporting ideas
-- Create detail nodes for specific points or examples
-- Use clear, concise labels (max 6-8 words)
-- Ensure proper hierarchical relationships (main -> topic -> subtopic -> detail)
-- Assign appropriate categories to each node
-- Create edges that show the logical flow and relationships`,
-      prompt: `Analyze this transcript and create a detailed mindmap structure:
-
-${truncatedTranscript}
-
-Create a mindmap with:
-1. One main central node (id: "main") representing the core topic
-2. Multiple topic nodes branching from main
-3. Subtopic nodes branching from topics
-4. Detail nodes with specific information
-5. Clear hierarchical edges connecting them
-
-Return a structured mindmap with nodes and edges.`
+    // Trigger Inngest function
+    await inngest.send({
+      name: 'transcription/generate.mindmap',
+      data: {
+        transcriptionId,
+        userId
+      }
     });
 
     return NextResponse.json({
-      mindmap: result.object,
-      transcriptionTitle: `Mindmap for ${transcription.youtubeUrl}`
+      message: 'Mindmap generation started',
+      transcriptionId
     });
   } catch (error) {
-    console.error('Error generating mindmap:', error);
+    console.error('Error triggering mindmap generation:', error);
     return NextResponse.json(
-      { error: 'Failed to generate mindmap' },
+      { error: 'Failed to start mindmap generation' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id: transcriptionId } = await params;
+
+    // Verify transcription belongs to user
+    const transcription = await prisma.transcription.findUnique({
+      where: {
+        id: transcriptionId,
+        userId
+      }
+    });
+
+    if (!transcription) {
+      return NextResponse.json(
+        { error: 'Transcription not found' },
+        { status: 404 }
+      );
+    }
+
+    // Fetch mindmap data
+    const mindmap = await prisma.mindmap.findUnique({
+      where: { transcriptionId }
+    });
+
+    if (!mindmap) {
+      return NextResponse.json({
+        status: 'not_started',
+        mindmap: null
+      });
+    }
+
+    return NextResponse.json({
+      status: mindmap.status,
+      mindmap: mindmap.status === 'completed' ? mindmap.data : null
+    });
+  } catch (error) {
+    console.error('Error fetching mindmap:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch mindmap status' },
       { status: 500 }
     );
   }

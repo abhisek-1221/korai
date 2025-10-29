@@ -47,7 +47,7 @@ const getNodeStyle = (category: string) => {
     case 'main':
       return {
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
+        color: '#000000',
         border: '2px solid #764ba2',
         borderRadius: '12px',
         padding: '20px 30px',
@@ -58,7 +58,7 @@ const getNodeStyle = (category: string) => {
     case 'topic':
       return {
         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-        color: 'white',
+        color: '#000000',
         border: '2px solid #f5576c',
         borderRadius: '10px',
         padding: '15px 20px',
@@ -69,7 +69,7 @@ const getNodeStyle = (category: string) => {
     case 'subtopic':
       return {
         background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-        color: 'white',
+        color: '#000000',
         border: '2px solid #00f2fe',
         borderRadius: '8px',
         padding: '12px 16px',
@@ -80,7 +80,7 @@ const getNodeStyle = (category: string) => {
     case 'detail':
       return {
         background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-        color: '#1a1a1a',
+        color: '#000000',
         border: '2px solid #38f9d7',
         borderRadius: '6px',
         padding: '10px 14px',
@@ -90,6 +90,7 @@ const getNodeStyle = (category: string) => {
     default:
       return {
         background: '#ffffff',
+        color: '#000000',
         border: '1px solid #ddd',
         borderRadius: '6px',
         padding: '10px',
@@ -198,10 +199,55 @@ export default function MindmapViewer({ transcriptionId }: MindmapViewerProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<
+    'not_started' | 'processing' | 'completed' | 'failed'
+  >('not_started');
   const [mindmapData, setMindmapData] = useState<MindmapData | null>(null);
+
+  // Poll for mindmap status
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(
+          `/api/transcription/${transcriptionId}/mindmap`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setStatus(data.status);
+
+          if (data.status === 'completed' && data.mindmap) {
+            setMindmapData(data.mindmap);
+            const { nodes: flowNodes, edges: flowEdges } =
+              convertToFlowElements(data.mindmap);
+            setNodes(flowNodes);
+            setEdges(flowEdges);
+            setIsLoading(false);
+          } else if (data.status === 'failed') {
+            setIsLoading(false);
+            toast.error('Mindmap generation failed');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking mindmap status:', error);
+      }
+    };
+
+    // Check immediately
+    checkStatus();
+
+    // Poll every 2 seconds if processing
+    const interval = setInterval(() => {
+      if (status === 'processing' || isLoading) {
+        checkStatus();
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [transcriptionId, status, isLoading]);
 
   const handleGenerateMindmap = async () => {
     setIsLoading(true);
+    setStatus('processing');
     try {
       const response = await fetch(
         `/api/transcription/${transcriptionId}/mindmap`,
@@ -214,21 +260,12 @@ export default function MindmapViewer({ transcriptionId }: MindmapViewerProps) {
         throw new Error('Failed to generate mindmap');
       }
 
-      const data = await response.json();
-      setMindmapData(data.mindmap);
-
-      const { nodes: flowNodes, edges: flowEdges } = convertToFlowElements(
-        data.mindmap
-      );
-      setNodes(flowNodes);
-      setEdges(flowEdges);
-
-      toast.success('Mindmap generated successfully!');
+      toast.success('Mindmap generation started!');
     } catch (error) {
       console.error('Error generating mindmap:', error);
-      toast.error('Failed to generate mindmap');
-    } finally {
+      toast.error('Failed to start mindmap generation');
       setIsLoading(false);
+      setStatus('failed');
     }
   };
 
@@ -246,30 +283,42 @@ export default function MindmapViewer({ transcriptionId }: MindmapViewerProps) {
     toast.success('Mindmap downloaded!');
   }, [mindmapData, transcriptionId]);
 
-  if (!mindmapData) {
+  if (!mindmapData || status === 'processing') {
     return (
       <Card className='border-zinc-800 bg-transparent p-6'>
         <div className='flex flex-col items-center justify-center space-y-4'>
-          <h3 className='text-xl font-semibold'>Generate Mindmap</h3>
+          <h3 className='text-xl font-semibold'>
+            {status === 'processing'
+              ? 'Generating Mindmap'
+              : 'Generate Mindmap'}
+          </h3>
           <p className='text-muted-foreground text-center text-sm'>
-            Create a visual mindmap of this transcription to see key concepts
-            and relationships
+            {status === 'processing'
+              ? 'Please wait while AI analyzes your transcription and creates the mindmap...'
+              : 'Create a visual mindmap of this transcription to see key concepts and relationships'}
           </p>
-          <Button
-            onClick={handleGenerateMindmap}
-            disabled={isLoading}
-            size='lg'
-            className='mt-4'
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className='mr-2 h-5 w-5 animate-spin' />
-                Generating Mindmap...
-              </>
-            ) : (
-              'Create Mindmap'
-            )}
-          </Button>
+          {status === 'processing' ? (
+            <div className='flex flex-col items-center space-y-3'>
+              <Loader2 className='h-12 w-12 animate-spin text-blue-500' />
+              <p className='text-muted-foreground text-sm'>Processing...</p>
+            </div>
+          ) : (
+            <Button
+              onClick={handleGenerateMindmap}
+              disabled={isLoading}
+              size='lg'
+              className='mt-4'
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-5 w-5 animate-spin' />
+                  Starting...
+                </>
+              ) : (
+                'Create Mindmap'
+              )}
+            </Button>
+          )}
         </div>
       </Card>
     );

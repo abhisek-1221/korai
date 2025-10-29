@@ -267,6 +267,157 @@ export const identifyClips = inngest.createFunction(
   }
 );
 
+export const generateMindmap = inngest.createFunction(
+  {
+    id: 'generate-mindmap',
+    name: 'Generate Mindmap from Transcription'
+  },
+  { event: 'transcription/generate.mindmap' },
+  async ({ event, step }) => {
+    const { transcriptionId, userId } = event.data;
+
+    // Step 1: Create initial mindmap record
+    const mindmapData = await step.run('create-mindmap-record', async () => {
+      // Check if mindmap already exists
+      const existingMindmap = await prisma.mindmap.findUnique({
+        where: { transcriptionId }
+      });
+
+      if (existingMindmap) {
+        // Update existing to processing
+        const mindmap = await prisma.mindmap.update({
+          where: { id: existingMindmap.id },
+          data: { status: 'processing', data: undefined }
+        });
+        return { mindmap };
+      }
+
+      // Create new mindmap record
+      const mindmap = await prisma.mindmap.create({
+        data: {
+          transcriptionId,
+          title: 'Mindmap',
+          status: 'processing'
+        }
+      });
+
+      return { mindmap };
+    });
+
+    // Step 2: Fetch transcription data
+    const transcriptionData = await step.run(
+      'fetch-transcription-data',
+      async () => {
+        const transcription = await prisma.transcription.findUnique({
+          where: { id: transcriptionId, userId },
+          include: {
+            segments: {
+              orderBy: { start: 'asc' }
+            }
+          }
+        });
+
+        if (!transcription) {
+          throw new Error('Transcription not found');
+        }
+
+        return { transcription };
+      }
+    );
+
+    // Step 3: Generate mindmap using AI
+    const mindmapResult = await step.run('generate-mindmap-ai', async () => {
+      const { generateObject } = await import('ai');
+      const { getModel, DEFAULT_MODEL } = await import('@/lib/providers');
+      const { z } = await import('zod');
+
+      // Combine all segments into a full transcript
+      const fullTranscript = transcriptionData.transcription.segments
+        .map((seg) => {
+          const speaker = seg.speakerName || seg.speaker;
+          return `${speaker}: ${seg.text}`;
+        })
+        .join('\n');
+
+      // Truncate if too long
+      const maxLength = 15000;
+      const truncatedTranscript =
+        fullTranscript.length > maxLength
+          ? fullTranscript.substring(0, maxLength) + '...[truncated]'
+          : fullTranscript;
+
+      const MindmapNodeSchema = z.object({
+        id: z.string(),
+        label: z.string(),
+        description: z.string().optional(),
+        category: z.enum(['main', 'topic', 'subtopic', 'detail'])
+      });
+
+      const MindmapEdgeSchema = z.object({
+        source: z.string(),
+        target: z.string()
+      });
+
+      const MindmapSchema = z.object({
+        title: z.string(),
+        nodes: z.array(MindmapNodeSchema),
+        edges: z.array(MindmapEdgeSchema)
+      });
+
+      const selectedModel = getModel(DEFAULT_MODEL);
+
+      const result = await generateObject({
+        model: selectedModel as any,
+        schema: MindmapSchema,
+        system: `You are an expert at analyzing transcripts and creating hierarchical mindmaps.
+Create a comprehensive mindmap that captures the key concepts, topics, and relationships from the transcript.
+
+Guidelines:
+- Create a central main node representing the overall topic
+- Create topic nodes for major themes or sections
+- Create subtopic nodes for supporting ideas
+- Create detail nodes for specific points or examples
+- Use clear, concise labels (max 6-8 words)
+- Ensure proper hierarchical relationships (main -> topic -> subtopic -> detail)
+- Assign appropriate categories to each node
+- Create edges that show the logical flow and relationships`,
+        prompt: `Analyze this transcript and create a detailed mindmap structure:
+
+${truncatedTranscript}
+
+Create a mindmap with:
+1. One main central node (id: "main") representing the core topic
+2. Multiple topic nodes branching from main
+3. Subtopic nodes branching from topics
+4. Detail nodes with specific information
+5. Clear hierarchical edges connecting them
+
+Return a structured mindmap with nodes and edges.`
+      });
+
+      return result.object;
+    });
+
+    // Step 4: Save mindmap data to database
+    await step.run('save-mindmap-data', async () => {
+      await prisma.mindmap.update({
+        where: { id: mindmapData.mindmap.id },
+        data: {
+          title: mindmapResult.title,
+          status: 'completed',
+          data: mindmapResult as any
+        }
+      });
+    });
+
+    return {
+      mindmapId: mindmapData.mindmap.id,
+      transcriptionId,
+      status: 'completed'
+    };
+  }
+);
+
 export const processClips = inngest.createFunction(
   { id: 'process-clips', name: 'Process and Export Viral Clips' },
   { event: 'clips/process' },
