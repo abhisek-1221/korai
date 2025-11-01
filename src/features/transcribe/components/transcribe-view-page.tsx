@@ -125,7 +125,7 @@ export default function TranscribeViewPage() {
       <div className='w-full space-y-4'>
         <div className='flex items-start justify-between'>
           <Heading
-            title='Video Transcribe'
+            title='Instant Video Transcription'
             description='Get transcripts from YouTube videos'
           />
         </div>
