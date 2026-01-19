@@ -628,18 +628,34 @@ type TranscriptSegment = {
 
 /**
  * Decode common HTML entities in transcript text
+ * Note: &amp; is decoded last to prevent double-unescaping
  */
 const decodeHtmlEntities = (text: string): string =>
   text
     .replace(/&#39;/g, "'")
     .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&nbsp;/g, ' ')
     .replace(/&#(\d+);/g, (_, num) =>
       String.fromCharCode(Number.parseInt(num, 10))
-    );
+    )
+    .replace(/&amp;/g, '&');
+
+/**
+ * Safely remove HTML tags from text
+ * Uses iterative approach to handle nested or malformed tags
+ */
+const stripHtmlTags = (text: string): string => {
+  let previous = '';
+  let current = text;
+  // Keep removing tags until no more tags are found
+  while (previous !== current) {
+    previous = current;
+    current = current.replace(/<[^>]*>/g, '');
+  }
+  return current;
+};
 
 /**
  * Parse <p t="ms" d="ms">text</p> format (Android client)
@@ -652,7 +668,7 @@ const parsePTagFormat = (xml: string): Array<TranscriptSegment> => {
   while (match !== null) {
     const [, startMsStr, durationMsStr, rawText] = match;
     if (startMsStr && durationMsStr && rawText) {
-      const text = decodeHtmlEntities(rawText.replace(/<[^>]+>/g, '')).trim();
+      const text = decodeHtmlEntities(stripHtmlTags(rawText)).trim();
       if (text) {
         segments.push({
           durationMs: Number.parseInt(durationMsStr, 10),
@@ -678,7 +694,7 @@ const parseTextTagFormat = (xml: string): Array<TranscriptSegment> => {
   while (match !== null) {
     const [, startStr, durStr, rawText] = match;
     if (startStr && durStr && rawText) {
-      const text = decodeHtmlEntities(rawText.replace(/<[^>]+>/g, '')).trim();
+      const text = decodeHtmlEntities(stripHtmlTags(rawText)).trim();
       if (text) {
         segments.push({
           durationMs: Math.round(Number.parseFloat(durStr) * 1000),
