@@ -46,10 +46,15 @@ export const formatDate = (dateString: string) => {
 };
 
 export const formatTimestamp = (ms: number): string => {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
 // Helper functions for YouTube URL parsing
@@ -339,92 +344,105 @@ export async function fetchVideoData(videoId: string): Promise<VideoData> {
 
 export async function fetchTranscript(youtube: any, videoId: string) {
   try {
-    const info = await youtube.getInfo(videoId);
-
-    // Check if video info was retrieved successfully
-    if (!info) {
-      throw new Error('Failed to retrieve video information');
-    }
-
-    const transcriptData = await info.getTranscript();
-
-    // Check if transcript data exists
-    if (!transcriptData || !transcriptData.transcript) {
-      throw new Error('No transcript available for this video');
-    }
-
-    // Check if transcript content exists
-    if (
-      !transcriptData.transcript.content ||
-      !transcriptData.transcript.content.body
-    ) {
-      throw new Error('Transcript content is not available');
-    }
-
-    const segments = transcriptData.transcript.content.body.initial_segments;
-
-    // Check if segments exist
-    if (!segments || !Array.isArray(segments) || segments.length === 0) {
-      throw new Error('No transcript segments found for this video');
-    }
-
-    const processedSegments = segments.map((segment: any) => ({
-      text: segment.snippet.text,
-      startTime: formatTimestamp(parseInt(segment.start_ms)),
-      endTime: formatTimestamp(parseInt(segment.end_ms))
-    }));
-
-    const fullTranscript: string = processedSegments
-      .map((segment: { text: string }) => segment.text)
-      .join(' ')
-      .trim();
-
-    if (!fullTranscript || fullTranscript.length === 0) {
-      throw new Error('Transcript appears to be empty');
-    }
-
-    return {
-      segments: processedSegments,
-      fullTranscript
-    };
+    // Try the new captions-based approach first (more reliable)
+    return await fetchTranscriptViaInnertube(youtube, videoId);
   } catch (error: any) {
-    console.error('Error fetching transcript:', error);
+    console.error('Error fetching transcript via captions:', error);
 
-    if (error.message?.includes('CompositeVideoPrimaryInfo')) {
+    // If captions approach fails, try the old getTranscript method as fallback
+    try {
+      console.log(
+        'Falling back to getTranscript method for video:',
+        videoId
+      );
+
+      const info = await youtube.getInfo(videoId);
+
+      // Check if video info was retrieved successfully
+      if (!info) {
+        throw new Error('Failed to retrieve video information');
+      }
+
+      const transcriptData = await info.getTranscript();
+
+      // Check if transcript data exists
+      if (!transcriptData || !transcriptData.transcript) {
+        throw new Error('No transcript available for this video');
+      }
+
+      // Check if transcript content exists
+      if (
+        !transcriptData.transcript.content ||
+        !transcriptData.transcript.content.body
+      ) {
+        throw new Error('Transcript content is not available');
+      }
+
+      const segments = transcriptData.transcript.content.body.initial_segments;
+
+      // Check if segments exist
+      if (!segments || !Array.isArray(segments) || segments.length === 0) {
+        throw new Error('No transcript segments found for this video');
+      }
+
+      const processedSegments = segments.map((segment: any) => ({
+        text: segment.snippet.text,
+        startTime: formatTimestamp(parseInt(segment.start_ms)),
+        endTime: formatTimestamp(parseInt(segment.end_ms))
+      }));
+
+      const fullTranscript: string = processedSegments
+        .map((segment: { text: string }) => segment.text)
+        .join(' ')
+        .trim();
+
+      if (!fullTranscript || fullTranscript.length === 0) {
+        throw new Error('Transcript appears to be empty');
+      }
+
+      return {
+        segments: processedSegments,
+        fullTranscript
+      };
+    } catch (fallbackError: any) {
+      console.error('Fallback getTranscript also failed:', fallbackError);
+
+      // Use the first error if it's more specific
+      if (
+        error.message?.includes('No caption tracks') ||
+        error.message?.includes('No valid caption URL')
+      ) {
+        throw new Error(
+          'No transcript is available for this video. The video may not have captions enabled.'
+        );
+      }
+
+      if (fallbackError.message?.includes('CompositeVideoPrimaryInfo')) {
+        throw new Error(
+          'This video may have restricted access or the YouTube parser needs updating. Please try a different video.'
+        );
+      }
+
+      if (fallbackError.message?.includes('Transcript is disabled')) {
+        throw new Error('Transcripts are disabled for this video');
+      }
+
+      if (
+        fallbackError.message?.includes('Private video') ||
+        fallbackError.message?.includes('Video unavailable')
+      ) {
+        throw new Error('This video is private or unavailable');
+      }
+
+      // Return the original error from captions approach if it's more informative
+      if (error.message) {
+        throw new Error(error.message);
+      }
+
       throw new Error(
-        'This video may have restricted access or the YouTube parser needs updating. Please try a different video.'
+        `Failed to fetch transcript: ${fallbackError.message || 'Unknown error occurred'}`
       );
     }
-
-    if (error.message?.includes('Transcript is disabled')) {
-      throw new Error('Transcripts are disabled for this video');
-    }
-
-    if (error.message?.includes('No transcript available')) {
-      throw new Error(
-        'No transcript is available for this video. The video may not have captions enabled.'
-      );
-    }
-
-    if (
-      error.message?.includes('Private video') ||
-      error.message?.includes('Video unavailable')
-    ) {
-      throw new Error('This video is private or unavailable');
-    }
-
-    if (
-      error.message?.includes('No transcript available') ||
-      error.message?.includes('Transcript content is not available') ||
-      error.message?.includes('No transcript segments found') ||
-      error.message?.includes('Transcript appears to be empty')
-    ) {
-      throw error;
-    }
-
-    throw new Error(
-      `Failed to fetch transcript: ${error.message || 'Unknown error occurred'}`
-    );
   }
 }
 
@@ -532,3 +550,298 @@ export function extractPlaylistId(url: string): string | null {
   const match = url.match(regex);
   return match ? match[1] : null;
 }
+
+// Custom Error Types for Transcript Fetching
+class InnertubeClientCreateError extends Error {
+  constructor({ cause, videoId }: { cause?: unknown; videoId: string }) {
+    super(`Failed to create Innertube client for video ${videoId}`);
+    this.name = 'InnertubeClientCreateError';
+    if (cause) this.cause = cause;
+  }
+}
+
+class InnertubeBasicInfoError extends Error {
+  constructor({ cause, videoId }: { cause?: unknown; videoId: string }) {
+    super(`Failed to get basic info for video ${videoId}`);
+    this.name = 'InnertubeBasicInfoError';
+    if (cause) this.cause = cause;
+  }
+}
+
+class InnertubeNoCaptionTracksError extends Error {
+  constructor({ videoId }: { videoId: string }) {
+    super(`No caption tracks found for video ${videoId}`);
+    this.name = 'InnertubeNoCaptionTracksError';
+  }
+}
+
+class InnertubeNoValidCaptionUrlError extends Error {
+  constructor({
+    videoId,
+    availableLanguages,
+  }: {
+    videoId: string;
+    availableLanguages: string[];
+  }) {
+    super(
+      `No valid caption URL found for video ${videoId}. Available languages: ${availableLanguages.join(', ')}`
+    );
+    this.name = 'InnertubeNoValidCaptionUrlError';
+  }
+}
+
+class InnertubeTimedTextFetchError extends Error {
+  constructor({
+    cause,
+    url,
+    videoId,
+    status,
+  }: {
+    cause?: unknown;
+    url: string;
+    videoId: string;
+    status?: number;
+  }) {
+    super(
+      `Failed to fetch timedtext for video ${videoId}${status ? ` (status: ${status})` : ''}`
+    );
+    this.name = 'InnertubeTimedTextFetchError';
+    if (cause) this.cause = cause;
+  }
+}
+
+class InnertubeTranscriptParseError extends Error {
+  constructor({ videoId }: { videoId: string }) {
+    super(`Failed to parse transcript XML for video ${videoId}`);
+    this.name = 'InnertubeTranscriptParseError';
+  }
+}
+
+/**
+ * Parsed transcript segment from timedtext XML
+ */
+type TranscriptSegment = {
+  durationMs: number;
+  startMs: number;
+  text: string;
+};
+
+/**
+ * Decode common HTML entities in transcript text
+ */
+const decodeHtmlEntities = (text: string): string =>
+  text
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, num) =>
+      globalThis.String.fromCharCode(Number.parseInt(num, 10))
+    );
+
+/**
+ * Parse <p t="ms" d="ms">text</p> format (Android client)
+ */
+const parsePTagFormat = (xml: string): Array<TranscriptSegment> => {
+  const segments: Array<TranscriptSegment> = [];
+  const pTagRegex = /<p\s+t="(\d+)"\s+d="(\d+)"[^>]*>([\s\S]*?)<\/p>/g;
+
+  let match = pTagRegex.exec(xml);
+  while (match !== null) {
+    const [, startMsStr, durationMsStr, rawText] = match;
+    if (startMsStr && durationMsStr && rawText) {
+      const text = decodeHtmlEntities(rawText.replace(/<[^>]+>/g, '')).trim();
+      if (text) {
+        segments.push({
+          durationMs: Number.parseInt(durationMsStr, 10),
+          startMs: Number.parseInt(startMsStr, 10),
+          text,
+        });
+      }
+    }
+    match = pTagRegex.exec(xml);
+  }
+  return segments;
+};
+
+/**
+ * Parse <text start="sec" dur="sec">text</text> format (alternative format)
+ */
+const parseTextTagFormat = (xml: string): Array<TranscriptSegment> => {
+  const segments: Array<TranscriptSegment> = [];
+  const textTagRegex =
+    /<text\s+start="([\d.]+)"\s+dur="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g;
+
+  let match = textTagRegex.exec(xml);
+  while (match !== null) {
+    const [, startStr, durStr, rawText] = match;
+    if (startStr && durStr && rawText) {
+      const text = decodeHtmlEntities(rawText.replace(/<[^>]+>/g, '')).trim();
+      if (text) {
+        segments.push({
+          durationMs: Math.round(Number.parseFloat(durStr) * 1000),
+          startMs: Math.round(Number.parseFloat(startStr) * 1000),
+          text,
+        });
+      }
+    }
+    match = textTagRegex.exec(xml);
+  }
+  return segments;
+};
+
+/**
+ * Parse timedtext XML into transcript segments
+ * Supports both <p> format (Android) and <text> format (alternative)
+ */
+const parseTimedTextXml = (xml: string): Array<TranscriptSegment> => {
+  // Try <p> tag format first (Android client format)
+  const pSegments = parsePTagFormat(xml);
+  if (pSegments.length > 0) {
+    return pSegments;
+  }
+  // Fall back to <text> tag format
+  return parseTextTagFormat(xml);
+};
+
+/**
+ * Fetch transcript XML from timedtext API
+ *
+ * @param captionUrl - The timedtext URL from caption tracks
+ * @param videoId - The video ID for error context
+ */
+const fetchTimedTextXml = async (
+  captionUrl: string,
+  videoId: string
+): Promise<string> => {
+  try {
+    const response = await fetch(captionUrl, {
+      headers: {
+        'Accept-Language': 'en-US,en;q=0.9',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+    });
+
+    if (!response.ok) {
+      throw new InnertubeTimedTextFetchError({
+        status: response.status,
+        url: captionUrl,
+        videoId,
+      });
+    }
+
+    const xml = await response.text();
+
+    if (!xml || xml.length === 0) {
+      throw new InnertubeTimedTextFetchError({
+        url: captionUrl,
+        videoId,
+      });
+    }
+
+    return xml;
+  } catch (error) {
+    if (error instanceof InnertubeTimedTextFetchError) {
+      throw error;
+    }
+    throw new InnertubeTimedTextFetchError({
+      cause: error,
+      url: captionUrl,
+      videoId,
+    });
+  }
+};
+
+/**
+ * Fetch transcript using Innertube's getBasicInfo to get caption URLs
+ * This approach uses the standard Innertube WEB client to get caption track URLs,
+ * then fetches timedtext directly from the captions API.
+ *
+ * @param youtube - Innertube client instance
+ * @param videoId - Raw YouTube video ID (without video_ prefix)
+ */
+const fetchTranscriptViaInnertube = async (
+  youtube: any,
+  videoId: string
+): Promise<{ segments: any[]; fullTranscript: string }> => {
+  try {
+    // 1. Get basic info (includes caption tracks)
+    const info = await youtube.getBasicInfo(videoId);
+
+    if (!info) {
+      throw new InnertubeBasicInfoError({ videoId });
+    }
+
+    // 2. Check for caption tracks
+    const captionTracks = info.captions?.caption_tracks;
+    if (!captionTracks || captionTracks.length === 0) {
+      throw new InnertubeNoCaptionTracksError({ videoId });
+    }
+
+    // 3. Find English caption track (prefer non-ASR if available)
+    const englishTrack =
+      captionTracks.find(
+        (t: any) => t.language_code === 'en' && t.kind !== 'asr'
+      ) ||
+      captionTracks.find((t: any) => t.language_code?.startsWith('en')) ||
+      captionTracks[0];
+
+    if (!englishTrack?.base_url) {
+      throw new InnertubeNoValidCaptionUrlError({
+        availableLanguages: captionTracks.map(
+          (t: any) => t.language_code ?? 'unknown'
+        ),
+        videoId,
+      });
+    }
+
+    // 4. Fetch timedtext XML
+    const xml = await fetchTimedTextXml(englishTrack.base_url, videoId);
+
+    // 5. Parse XML to segments
+    const segments = parseTimedTextXml(xml);
+
+    if (segments.length === 0) {
+      throw new InnertubeTranscriptParseError({ videoId });
+    }
+
+    // 6. Convert to the format expected by the API
+    const processedSegments = segments.map((segment) => ({
+      text: segment.text,
+      startTime: formatTimestamp(segment.startMs),
+      endTime: formatTimestamp(segment.startMs + segment.durationMs),
+    }));
+
+    const fullTranscript: string = processedSegments
+      .map((segment: { text: string }) => segment.text)
+      .join(' ')
+      .trim();
+
+    if (!fullTranscript || fullTranscript.length === 0) {
+      throw new Error('Transcript appears to be empty');
+    }
+
+    return {
+      segments: processedSegments,
+      fullTranscript,
+    };
+  } catch (error: any) {
+    console.error('Error fetching transcript via captions:', error);
+
+    // Pass through our custom errors with their messages
+    if (
+      error instanceof InnertubeNoCaptionTracksError ||
+      error instanceof InnertubeNoValidCaptionUrlError ||
+      error instanceof InnertubeTimedTextFetchError ||
+      error instanceof InnertubeTranscriptParseError ||
+      error instanceof InnertubeBasicInfoError
+    ) {
+      throw new Error(error.message);
+    }
+
+    throw error;
+  }
+};
