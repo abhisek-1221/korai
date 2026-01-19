@@ -638,7 +638,7 @@ const decodeHtmlEntities = (text: string): string =>
     .replace(/&gt;/g, '>')
     .replace(/&nbsp;/g, ' ')
     .replace(/&#(\d+);/g, (_, num) =>
-      globalThis.String.fromCharCode(Number.parseInt(num, 10))
+      String.fromCharCode(Number.parseInt(num, 10))
     );
 
 /**
