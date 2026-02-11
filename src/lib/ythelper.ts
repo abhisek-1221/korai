@@ -340,6 +340,7 @@ export async function fetchVideoData(videoId: string): Promise<VideoData> {
 export async function fetchTranscript(youtube: any, videoId: string) {
   try {
     const info = await youtube.getInfo(videoId);
+    // console.log(info);
 
     // Check if video info was retrieved successfully
     if (!info) {
